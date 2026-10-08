@@ -11,6 +11,10 @@ export async function GET() {
   if (!base) return NextResponse.json({ status: "unconfigured" }, { status: 503, headers: noStore });
   try {
     const res = await fetch(`${base}/healthz`, { cache: "no-store", signal: AbortSignal.timeout(5_000) });
+    // Render answers for a service that doesn't exist (yet) with this header — that's "not deployed", not "asleep".
+    if (res.status === 404 && res.headers.get("x-render-routing") === "no-server") {
+      return NextResponse.json({ status: "unconfigured" }, { status: 503, headers: noStore });
+    }
     if (!res.ok || !(res.headers.get("content-type") ?? "").includes("application/json")) {
       return NextResponse.json({ status: "starting" }, { status: 503, headers: noStore });
     }
