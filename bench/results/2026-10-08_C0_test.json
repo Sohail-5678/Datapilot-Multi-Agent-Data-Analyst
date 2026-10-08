@@ -26,7 +26,7 @@
  "n_planned": 50,
  "fake": false,
  "fake_oracle": false,
- "preview": true,
+ "preview": false,
  "pinned_models": true,
  "routing": {
   "sql_direct": "fast"
@@ -46,7 +46,7 @@
  "profile_version": "datapilot@1",
  "profile_sha": "1bd7769a40df",
  "started_at": "2026-10-08T20:42:41Z",
- "updated_at": "2026-10-08T20:55:42Z",
+ "updated_at": "2026-10-08T21:12:48Z",
  "stop_reason": null,
  "questions": [
   {
@@ -422,91 +422,1418 @@
    "gold_rows": 1,
    "pred_rows": 1,
    "degraded": []
+  },
+  {
+   "question_id": 39,
+   "db_id": "california_schools",
+   "difficulty": "simple",
+   "ex": true,
+   "pred_sql": "SELECT\n    AVG(s.NumTstTakr) AS avg_test_takers\nFROM satscores s\nJOIN schools sc ON s.cds = sc.CDSCode\nWHERE sc.County = 'Fresno'\n  AND substr(sc.OpenDate, 1, 4) = '1980'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2828,
+   "tokens_in": 2755,
+   "tokens_out": 73,
+   "list_price_cost_usd": 0.000842,
+   "latency_ms": 865,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 377,
+   "db_id": "card_games",
+   "difficulty": "simple",
+   "ex": true,
+   "pred_sql": "SELECT COUNT(*) AS count\nFROM cards\nWHERE originalType = 'Summon - Angel'\n  AND subtypes IS NOT NULL\n  AND subtypes != 'Angel'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 3563,
+   "tokens_in": 3522,
+   "tokens_out": 41,
+   "list_price_cost_usd": 0.001046,
+   "latency_ms": 1479,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 578,
+   "db_id": "codebase_community",
+   "difficulty": "moderate",
+   "ex": true,
+   "pred_sql": "SELECT u.DisplayName, u.Reputation\nFROM posts p\nJOIN users u ON p.OwnerUserId = u.Id\nWHERE p.Title = 'Understanding what Dassault iSight is doing?'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1945,
+   "tokens_in": 1832,
+   "tokens_out": 113,
+   "list_price_cost_usd": 0.000598,
+   "latency_ms": 1465,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 1500,
+   "db_id": "debit_card_specializing",
+   "difficulty": "simple",
+   "ex": false,
+   "pred_sql": "SELECT DISTINCT p.Description\nFROM transactions_1k t\nJOIN products p ON t.ProductID = p.ProductID\nWHERE strftime('%Y-%m', t.Date) = '2013-09'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1001,
+   "tokens_in": 684,
+   "tokens_out": 317,
+   "list_price_cost_usd": 0.000385,
+   "latency_ms": 1466,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 0
+    }
+   ],
+   "gold_rows": 976,
+   "pred_rows": 0,
+   "degraded": []
+  },
+  {
+   "question_id": 1048,
+   "db_id": "european_football_2",
+   "difficulty": "simple",
+   "ex": true,
+   "pred_sql": "SELECT pa.overall_rating\nFROM Player_Attributes pa\nJOIN Player p ON pa.player_api_id = p.player_api_id\nWHERE p.player_name = 'Gabriel Tamas'\n  AND strftime('%Y', pa.date) = '2011'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 4225,
+   "tokens_in": 4165,
+   "tokens_out": 60,
+   "list_price_cost_usd": 0.001243,
+   "latency_ms": 1008,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 152,
+   "db_id": "financial",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT AVG(d.A15) AS average_crimes_1995\nFROM district d\nWHERE d.A15 > 4000\n  AND EXISTS (\n    SELECT 1\n    FROM account a\n    WHERE a.district_id = d.district_id\n      AND substr(a.date, 1, 2) >= '97'\n  )",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1970,
+   "tokens_in": 1673,
+   "tokens_out": 297,
+   "list_price_cost_usd": 0.00066,
+   "latency_ms": 1115,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 884,
+   "db_id": "formula_1",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT r.name\nFROM races r\nWHERE r.date = (SELECT MIN(date) FROM races)",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2149,
+   "tokens_in": 2123,
+   "tokens_out": 26,
+   "list_price_cost_usd": 0.000631,
+   "latency_ms": 821,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 3,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 1323,
+   "db_id": "student_club",
+   "difficulty": "moderate",
+   "ex": true,
+   "pred_sql": "SELECT e.event_name\nFROM event e\nJOIN attendance a ON e.event_id = a.link_to_event\nWHERE e.type != 'fundraiser'\nGROUP BY e.event_id, e.event_name\nHAVING COUNT(a.link_to_member) > 20",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1703,
+   "tokens_in": 1642,
+   "tokens_out": 61,
+   "list_price_cost_usd": 0.000512,
+   "latency_ms": 1192,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 8
+    }
+   ],
+   "gold_rows": 8,
+   "pred_rows": 8,
+   "degraded": []
+  },
+  {
+   "question_id": 761,
+   "db_id": "superhero",
+   "difficulty": "moderate",
+   "ex": true,
+   "pred_sql": "SELECT s.superhero_name\nFROM superhero s\nJOIN gender g ON s.gender_id = g.id\nWHERE g.gender = 'Male'\n  AND s.weight_kg > (SELECT AVG(weight_kg) * 0.79 FROM superhero WHERE weight_kg IS NOT NULL AND weight_kg > 0)",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1351,
+   "tokens_in": 1279,
+   "tokens_out": 72,
+   "list_price_cost_usd": 0.000413,
+   "latency_ms": 630,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 1189,
+   "db_id": "thrombosis_prediction",
+   "difficulty": "challenging",
+   "ex": true,
+   "pred_sql": "SELECT COUNT(*)\nFROM Examination\nWHERE Thrombosis = 2\n  AND \"ANA Pattern\" = 'S'\n  AND \"aCL IgM\" > (SELECT AVG(\"aCL IgM\") FROM Examination) * 1.2",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2259,
+   "tokens_in": 2199,
+   "tokens_out": 60,
+   "list_price_cost_usd": 0.000673,
+   "latency_ms": 679,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 215,
+   "db_id": "toxicology",
+   "difficulty": "challenging",
+   "ex": false,
+   "pred_sql": "SELECT COUNT(DISTINCT a.atom_id) AS atom_count\nFROM atom a\nJOIN bond b ON a.molecule_id = b.molecule_id\nWHERE a.element IN ('i', 's')\n  AND b.bond_type = '-'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 816,
+   "tokens_in": 759,
+   "tokens_out": 57,
+   "list_price_cost_usd": 0.000254,
+   "latency_ms": 590,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 85,
+   "db_id": "california_schools",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT\n  f.\"Percent (%) Eligible Free (K-12)\",\n  f.\"District Code\"\nFROM frpm AS f\nJOIN schools AS s\n  ON f.CDSCode = s.CDSCode\nWHERE s.AdmFName1 = 'Alusine'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2826,
+   "tokens_in": 2761,
+   "tokens_out": 65,
+   "list_price_cost_usd": 0.000839,
+   "latency_ms": 1136,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 405,
+   "db_id": "card_games",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT COUNT(*) AS count\nFROM set_translations st\nJOIN sets s ON st.setCode = s.code\nWHERE s.block = 'Commander'\n  AND st.language = 'Portuguese (Brasil)'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 3583,
+   "tokens_in": 3533,
+   "tokens_out": 50,
+   "list_price_cost_usd": 0.001054,
+   "latency_ms": 1053,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 629,
+   "db_id": "codebase_community",
+   "difficulty": "simple",
+   "ex": true,
+   "pred_sql": "SELECT CAST(COUNT(CASE WHEN strftime('%Y', CreationDate) = '2010' THEN Id END) AS REAL) / COUNT(CASE WHEN strftime('%Y', CreationDate) = '2011' THEN Id END) AS ratio\nFROM votes",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1900,
+   "tokens_in": 1837,
+   "tokens_out": 63,
+   "list_price_cost_usd": 0.00057,
+   "latency_ms": 726,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 1506,
+   "db_id": "debit_card_specializing",
+   "difficulty": "moderate",
+   "ex": true,
+   "pred_sql": "SELECT DISTINCT p.Description\nFROM transactions_1k t\nJOIN gasstations g ON t.GasStationID = g.GasStationID\nJOIN products p ON t.ProductID = p.ProductID\nWHERE g.Country = 'CZE'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 709,
+   "tokens_in": 654,
+   "tokens_out": 55,
+   "list_price_cost_usd": 0.000222,
+   "latency_ms": 511,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 21
+    }
+   ],
+   "gold_rows": 21,
+   "pred_rows": 21,
+   "degraded": []
+  },
+  {
+   "question_id": 1094,
+   "db_id": "european_football_2",
+   "difficulty": "challenging",
+   "ex": false,
+   "pred_sql": "SELECT\n  CAST((pa1.overall_rating - pa2.overall_rating) AS REAL) * 100 / pa2.overall_rating AS percentage\nFROM Player_Attributes pa1\nJOIN Player p1 ON pa1.player_api_id = p1.player_api_id\nJOIN Player_Attributes pa2 ON pa2.player_api_id = (\n  SELECT player_api_id FROM Player WHERE player_name = 'Paulin Puel'\n)\nJOIN Player p2 ON pa2.player_api_id = p2.player_api_id\nWHERE p1.player_name = 'Ariel Borysiuk'\n  AND pa1.date = pa2.date\nLIMIT 1",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 4348,
+   "tokens_in": 4203,
+   "tokens_out": 145,
+   "list_price_cost_usd": 0.001304,
+   "latency_ms": 1591,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 159,
+   "db_id": "financial",
+   "difficulty": "simple",
+   "ex": false,
+   "pred_sql": "SELECT t.trans_id, t.account_id, t.date, t.type, t.operation, t.amount, t.balance, t.k_symbol, t.bank, t.account\nFROM trans t\nJOIN disp d ON t.account_id = d.account_id\nWHERE d.client_id = 3356\n  AND t.operation = 'VYBER'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1825,
+   "tokens_in": 1636,
+   "tokens_out": 189,
+   "list_price_cost_usd": 0.000586,
+   "latency_ms": 1393,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 140
+    }
+   ],
+   "gold_rows": 140,
+   "pred_rows": 140,
+   "degraded": []
+  },
+  {
+   "question_id": 895,
+   "db_id": "formula_1",
+   "difficulty": "moderate",
+   "ex": true,
+   "pred_sql": "SELECT AVG(lt.milliseconds) AS average_lap_time\nFROM lapTimes lt\nJOIN drivers d ON lt.driverId = d.driverId\nJOIN races r ON lt.raceId = r.raceId\nWHERE d.forename = 'Lewis'\n  AND d.surname = 'Hamilton'\n  AND r.year = 2009\n  AND r.name = 'Malaysian Grand Prix'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2250,
+   "tokens_in": 2159,
+   "tokens_out": 91,
+   "list_price_cost_usd": 0.00068,
+   "latency_ms": 814,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 1357,
+   "db_id": "student_club",
+   "difficulty": "simple",
+   "ex": true,
+   "pred_sql": "SELECT i.date_received\nFROM income AS i\nJOIN member AS m ON i.link_to_member = m.member_id\nWHERE m.first_name = 'Connor'\n  AND m.last_name = 'Hilton'\n  AND i.source = 'Dues'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1698,
+   "tokens_in": 1639,
+   "tokens_out": 59,
+   "list_price_cost_usd": 0.00051,
+   "latency_ms": 714,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 2
+    }
+   ],
+   "gold_rows": 2,
+   "pred_rows": 2,
+   "degraded": []
+  },
+  {
+   "question_id": 769,
+   "db_id": "superhero",
+   "difficulty": "challenging",
+   "ex": false,
+   "pred_sql": "SELECT s.superhero_name\nFROM superhero s\nJOIN publisher p ON s.publisher_id = p.id\nJOIN hero_attribute ha ON s.id = ha.hero_id\nJOIN attribute a ON ha.attribute_id = a.id\nWHERE p.publisher_name = 'Dark Horse Comics'\n  AND a.attribute_name = 'durability'\nORDER BY ha.attribute_value DESC\nLIMIT 1",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1345,
+   "tokens_in": 1262,
+   "tokens_out": 83,
+   "list_price_cost_usd": 0.000415,
+   "latency_ms": 534,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 0
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 0,
+   "degraded": []
+  },
+  {
+   "question_id": 1225,
+   "db_id": "thrombosis_prediction",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT \n    p.SEX,\n    GROUP_CONCAT(DISTINCT p.ID) AS patient_ids\nFROM Patient p\nJOIN Laboratory l ON p.ID = l.ID\nWHERE l.\"T-BIL\" >= 2.0\nGROUP BY p.SEX",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2296,
+   "tokens_in": 2144,
+   "tokens_out": 152,
+   "list_price_cost_usd": 0.000711,
+   "latency_ms": 992,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 2
+    }
+   ],
+   "gold_rows": 10,
+   "pred_rows": 2,
+   "degraded": []
+  },
+  {
+   "question_id": 244,
+   "db_id": "toxicology",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT m.label\nFROM molecule m\nJOIN bond b ON m.molecule_id = b.molecule_id\nWHERE b.bond_type = ' = '\nGROUP BY m.molecule_id\nORDER BY COUNT(*) DESC\nLIMIT 1",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 786,
+   "tokens_in": 731,
+   "tokens_out": 55,
+   "list_price_cost_usd": 0.000244,
+   "latency_ms": 502,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 0
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 0,
+   "degraded": []
+  },
+  {
+   "question_id": 477,
+   "db_id": "card_games",
+   "difficulty": "challenging",
+   "ex": true,
+   "pred_sql": "SELECT DISTINCT c.artist\nFROM cards c\nJOIN sets s ON c.setCode = s.code\nWHERE s.name = 'Coldsnap'\n  AND c.artist IN ('Jeremy Jarvis', 'Aaron Miller', 'Chippy')",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 3609,
+   "tokens_in": 3557,
+   "tokens_out": 52,
+   "list_price_cost_usd": 0.001062,
+   "latency_ms": 1522,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 2
+    }
+   ],
+   "gold_rows": 2,
+   "pred_rows": 2,
+   "degraded": []
+  },
+  {
+   "question_id": 634,
+   "db_id": "codebase_community",
+   "difficulty": "challenging",
+   "ex": false,
+   "pred_sql": "SELECT \n    u.DisplayName,\n    SUM(p.ViewCount) AS TotalViewCount\nFROM posts p\nJOIN users u ON p.OwnerUserId = u.Id\nWHERE u.DisplayName IN ('Harvey Motulsky', 'Noah Snyder')\nGROUP BY u.DisplayName\nORDER BY TotalViewCount DESC\nLIMIT 1",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1991,
+   "tokens_in": 1837,
+   "tokens_out": 154,
+   "list_price_cost_usd": 0.000624,
+   "latency_ms": 1208,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 1107,
+   "db_id": "european_football_2",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT pa.date\nFROM Player_Attributes pa\nJOIN Player p ON pa.player_api_id = p.player_api_id\nWHERE p.player_name = 'Kevin Constant'\n  AND pa.crossing = (\n    SELECT MAX(pa2.crossing)\n    FROM Player_Attributes pa2\n    JOIN Player p2 ON pa2.player_api_id = p2.player_api_id\n    WHERE p2.player_name = 'Kevin Constant'\n  )\nORDER BY pa.date ASC\nLIMIT 1",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 4270,
+   "tokens_in": 4162,
+   "tokens_out": 108,
+   "list_price_cost_usd": 0.001271,
+   "latency_ms": 1227,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 168,
+   "db_id": "financial",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT \n    CAST(SUM(CASE WHEN c.gender = 'F' THEN 1 ELSE 0 END) AS REAL) * 100.0 / COUNT(*) AS percentage\nFROM client c\nJOIN disp d ON c.client_id = d.client_id\nJOIN account a ON d.account_id = a.account_id\nJOIN district dist ON a.district_id = dist.district_id\nWHERE dist.A11 > 10000",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1753,
+   "tokens_in": 1653,
+   "tokens_out": 100,
+   "list_price_cost_usd": 0.000538,
+   "latency_ms": 637,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 944,
+   "db_id": "formula_1",
+   "difficulty": "challenging",
+   "ex": false,
+   "pred_sql": null,
+   "status": "failure",
+   "confidence": null,
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2777,
+   "tokens_in": 2177,
+   "tokens_out": 600,
+   "list_price_cost_usd": 0.000985,
+   "latency_ms": 1799,
+   "error": "Rejected by the SQL guard: Could not parse the SQL: Error tokenizing '_ms) / last_ms) * 100",
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "rejected",
+     "repairs": 0,
+     "row_count": null
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": null,
+   "degraded": []
+  },
+  {
+   "question_id": 1394,
+   "db_id": "student_club",
+   "difficulty": "simple",
+   "ex": true,
+   "pred_sql": "SELECT COUNT(*) AS count\nFROM member m\nJOIN major ma ON m.link_to_major = ma.major_id\nWHERE ma.major_name = 'Physics Teaching'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1658,
+   "tokens_in": 1620,
+   "tokens_out": 38,
+   "list_price_cost_usd": 0.000492,
+   "latency_ms": 668,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 786,
+   "db_id": "superhero",
+   "difficulty": "moderate",
+   "ex": true,
+   "pred_sql": "SELECT COUNT(*) AS count\nFROM hero_attribute ha\nJOIN attribute a ON ha.attribute_id = a.id\nWHERE a.attribute_name = 'Strength'\n  AND ha.attribute_value = (\n    SELECT MAX(ha2.attribute_value)\n    FROM hero_attribute ha2\n    JOIN attribute a2 ON ha2.attribute_id = a2.id\n    WHERE a2.attribute_name = 'Strength'\n  )",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1331,
+   "tokens_in": 1241,
+   "tokens_out": 90,
+   "list_price_cost_usd": 0.000413,
+   "latency_ms": 590,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 1256,
+   "db_id": "thrombosis_prediction",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT COUNT(DISTINCT p.ID) AS count\nFROM Patient p\nJOIN Laboratory l ON p.ID = l.ID\nWHERE l.CRP = '+'\n  AND p.Description IS NULL",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2173,
+   "tokens_in": 2128,
+   "tokens_out": 45,
+   "list_price_cost_usd": 0.000644,
+   "latency_ms": 708,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 282,
+   "db_id": "toxicology",
+   "difficulty": "challenging",
+   "ex": true,
+   "pred_sql": "SELECT\n  CAST(SUM(CASE WHEN a.element = 'h' THEN 1 ELSE 0 END) AS REAL) * 1.0 / COUNT(a.element) AS ratio,\n  m.label\nFROM atom a\nJOIN molecule m ON a.molecule_id = m.molecule_id\nWHERE a.molecule_id = 'TR006'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 859,
+   "tokens_in": 779,
+   "tokens_out": 80,
+   "list_price_cost_usd": 0.000273,
+   "latency_ms": 648,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 530,
+   "db_id": "card_games",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT DISTINCT c.frameVersion, c.name\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE c.artist = 'Allen Williams'\n  AND l.status = 'Banned'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 3829,
+   "tokens_in": 3541,
+   "tokens_out": 288,
+   "list_price_cost_usd": 0.001197,
+   "latency_ms": 2037,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 0
+    }
+   ],
+   "gold_rows": 83,
+   "pred_rows": 0,
+   "degraded": []
+  },
+  {
+   "question_id": 671,
+   "db_id": "codebase_community",
+   "difficulty": "simple",
+   "ex": true,
+   "pred_sql": "SELECT u.DisplayName\nFROM badges b\nJOIN users u ON b.UserId = u.Id\nWHERE b.Name = 'Autobiographer'\nORDER BY b.Date ASC\nLIMIT 1",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1862,
+   "tokens_in": 1818,
+   "tokens_out": 44,
+   "list_price_cost_usd": 0.000553,
+   "latency_ms": 575,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 1136,
+   "db_id": "european_football_2",
+   "difficulty": "moderate",
+   "ex": true,
+   "pred_sql": "SELECT COUNT(*) AS count\nFROM Player_Attributes\nWHERE crossing = (SELECT MAX(crossing) FROM Player_Attributes)\n  AND preferred_foot = 'left'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 4214,
+   "tokens_in": 4173,
+   "tokens_out": 41,
+   "list_price_cost_usd": 0.001234,
+   "latency_ms": 1032,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 945,
+   "db_id": "formula_1",
+   "difficulty": "simple",
+   "ex": true,
+   "pred_sql": "SELECT COUNT(*) AS count\nFROM circuits\nWHERE country = 'Australia'\n  AND location = 'Adelaide'",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2138,
+   "tokens_in": 2108,
+   "tokens_out": 30,
+   "list_price_cost_usd": 0.000629,
+   "latency_ms": 758,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 798,
+   "db_id": "superhero",
+   "difficulty": "moderate",
+   "ex": true,
+   "pred_sql": "SELECT p.publisher_name\nFROM superhero s\nJOIN publisher p ON s.publisher_id = p.id\nWHERE s.superhero_name IN ('Hawkman', 'Karate Kid', 'Speedy')",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 1315,
+   "tokens_in": 1269,
+   "tokens_out": 46,
+   "list_price_cost_usd": 0.000395,
+   "latency_ms": 917,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 3
+    }
+   ],
+   "gold_rows": 3,
+   "pred_rows": 3,
+   "degraded": []
+  },
+  {
+   "question_id": 1270,
+   "db_id": "thrombosis_prediction",
+   "difficulty": "challenging",
+   "ex": true,
+   "pred_sql": "SELECT COUNT(DISTINCT p.ID)\nFROM Patient p\nJOIN Laboratory l ON p.ID = l.ID\nJOIN Examination e ON p.ID = e.ID\nWHERE l.SC170 IN ('negative', '0')\n  AND p.SEX = 'F'\n  AND e.Symptoms IS NULL",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2353,
+   "tokens_in": 2159,
+   "tokens_out": 194,
+   "list_price_cost_usd": 0.000741,
+   "latency_ms": 880,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
+  },
+  {
+   "question_id": 978,
+   "db_id": "formula_1",
+   "difficulty": "simple",
+   "ex": false,
+   "pred_sql": "SELECT \n  c.location,\n  c.lat,\n  c.lng,\n  COUNT(r.raceId) AS times\nFROM circuits c\nJOIN races r ON c.circuitId = r.circuitId\nWHERE c.country = 'Austria'\nGROUP BY c.circuitId, c.location, c.lat, c.lng",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2197,
+   "tokens_in": 2121,
+   "tokens_out": 76,
+   "list_price_cost_usd": 0.00066,
+   "latency_ms": 684,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 3
+    }
+   ],
+   "gold_rows": 2,
+   "pred_rows": 3,
+   "degraded": []
+  },
+  {
+   "question_id": 989,
+   "db_id": "formula_1",
+   "difficulty": "moderate",
+   "ex": false,
+   "pred_sql": "SELECT \n    d.forename,\n    d.surname,\n    r.time\nFROM results r\nJOIN races ra ON r.raceId = ra.raceId\nJOIN drivers d ON r.driverId = d.driverId\nWHERE ra.year = 2008\n  AND ra.name = 'Canadian Grand Prix'\n  AND r.position = 1",
+   "status": "success",
+   "confidence": "Medium",
+   "llm_calls": 1,
+   "live_calls": 1,
+   "cached_calls": 0,
+   "tokens": 2334,
+   "tokens_in": 2129,
+   "tokens_out": 205,
+   "list_price_cost_usd": 0.000738,
+   "latency_ms": 942,
+   "error": null,
+   "models": {
+    "qwen/qwen3.8-27b": 1
+   },
+   "pruned_by": "full schema",
+   "cache_hit": false,
+   "candidates": [
+    {
+     "strategy": "direct",
+     "status": "ok",
+     "repairs": 0,
+     "row_count": 1
+    }
+   ],
+   "gold_rows": 1,
+   "pred_rows": 1,
+   "degraded": []
   }
  ],
  "aggregate": {
-  "n": 11,
-  "ex": 0.3636,
+  "n": 50,
+  "ex": 0.48,
   "ex_ci95": [
-   0.0909,
-   0.6364
+   0.34,
+   0.62
   ],
-  "correct": 4,
+  "correct": 24,
   "per_difficulty": {
    "simple": {
-    "n": 3,
-    "ex": 0.6667
+    "n": 14,
+    "ex": 0.7143
    },
    "moderate": {
-    "n": 6,
-    "ex": 0.3333
+    "n": 25,
+    "ex": 0.4
    },
    "challenging": {
-    "n": 2,
-    "ex": 0.0
+    "n": 11,
+    "ex": 0.3636
    }
   },
   "per_db": {
    "california_schools": {
-    "n": 1,
-    "ex": 0.0
+    "n": 3,
+    "ex": 0.3333
    },
    "card_games": {
-    "n": 1,
-    "ex": 0.0
+    "n": 5,
+    "ex": 0.4
    },
    "codebase_community": {
-    "n": 1,
-    "ex": 1.0
+    "n": 5,
+    "ex": 0.8
    },
    "debit_card_specializing": {
-    "n": 1,
-    "ex": 1.0
+    "n": 3,
+    "ex": 0.6667
    },
    "european_football_2": {
-    "n": 1,
-    "ex": 0.0
+    "n": 5,
+    "ex": 0.4
    },
    "financial": {
-    "n": 1,
+    "n": 4,
     "ex": 0.0
    },
    "formula_1": {
-    "n": 1,
-    "ex": 0.0
+    "n": 7,
+    "ex": 0.2857
    },
    "student_club": {
-    "n": 1,
-    "ex": 0.0
+    "n": 4,
+    "ex": 0.75
    },
    "superhero": {
-    "n": 1,
-    "ex": 1.0
+    "n": 5,
+    "ex": 0.8
    },
    "thrombosis_prediction": {
-    "n": 1,
-    "ex": 1.0
+    "n": 5,
+    "ex": 0.6
    },
    "toxicology": {
-    "n": 1,
-    "ex": 0.0
+    "n": 4,
+    "ex": 0.25
    }
   },
   "llm_calls_per_question": 1.0,
-  "live_calls_total": 11,
+  "live_calls_total": 50,
   "cache_hit_rate": 0.0,
-  "tokens_per_question": 2195.1,
-  "cost_per_question_usd": 0.000677,
-  "cost_total_usd": 0.007452,
+  "tokens_per_question": 2243.7,
+  "cost_per_question_usd": 0.000686,
+  "cost_total_usd": 0.034293,
   "latency_ms": {
-   "p50": 1024.0,
-   "p95": 1571.5
+   "p50": 929.5,
+   "p95": 1589.7
   },
   "status_counts": {
-   "success": 11
+   "success": 49,
+   "failure": 1
   },
   "models": {
-   "qwen/qwen3.8-27b": 11
+   "qwen/qwen3.8-27b": 50
   },
   "degraded_questions": 0,
   "failures": [
@@ -586,10 +1913,219 @@
     "pred_sql": "SELECT AVG(CASE WHEN a.element = 'o' THEN 1 ELSE 0 END) AS avg_oxygen\nFROM atom a\nJOIN bond b ON a.molecule_id = b.molecule_id\nWHERE b.bond_type = '-'",
     "status": "success",
     "error": null
+   },
+   {
+    "question_id": 1500,
+    "db_id": "debit_card_specializing",
+    "difficulty": "simple",
+    "question": "Please list the product description of the products consumed in September, 2013.",
+    "evidence": "September 2013 refers to 201309; The first 4 strings of the Date values in the yearmonth table can represent year; The 5th and 6th string of the date can refer to month.",
+    "gold_sql": "SELECT T3.Description FROM transactions_1k AS T1 INNER JOIN yearmonth AS T2 ON T1.CustomerID = T2.CustomerID INNER JOIN products AS T3 ON T1.ProductID = T3.ProductID WHERE T2.Date = '201309'",
+    "pred_sql": "SELECT DISTINCT p.Description\nFROM transactions_1k t\nJOIN products p ON t.ProductID = p.ProductID\nWHERE strftime('%Y-%m', t.Date) = '2013-09'",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 152,
+    "db_id": "financial",
+    "difficulty": "moderate",
+    "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+    "evidence": "A3 refers to region names; A15 stands for the average number of crimes commited in 1995.",
+    "gold_sql": "SELECT AVG(T1.A15) FROM district AS T1 INNER JOIN account AS T2 ON T1.district_id = T2.district_id WHERE STRFTIME('%Y', T2.date) >= '1997' AND T1.A15 > 4000",
+    "pred_sql": "SELECT AVG(d.A15) AS average_crimes_1995\nFROM district d\nWHERE d.A15 > 4000\n  AND EXISTS (\n    SELECT 1\n    FROM account a\n    WHERE a.district_id = d.district_id\n      AND substr(a.date, 1, 2) >= '97'\n  )",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 884,
+    "db_id": "formula_1",
+    "difficulty": "moderate",
+    "question": "List the names of all races that occurred in the earliest recorded year and month.",
+    "evidence": "earliest recorded year and month refers to year = year(min(date)) and month = month(min(date));",
+    "gold_sql": "SELECT name FROM races WHERE STRFTIME('%Y', date) = ( SELECT STRFTIME('%Y', date) FROM races ORDER BY date ASC LIMIT 1 ) AND STRFTIME('%m', date) = ( SELECT STRFTIME('%m', date) FROM races ORDER BY date ASC LIMIT 1 )",
+    "pred_sql": "SELECT r.name\nFROM races r\nWHERE r.date = (SELECT MIN(date) FROM races)",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 215,
+    "db_id": "toxicology",
+    "difficulty": "challenging",
+    "question": "How many atoms with iodine and with sulfur type elements are there in single bond molecules?",
+    "evidence": "with iodine element refer to element = 'i'; with sulfur element refers to element = 's'; single type bond refers to bond_type = '-'; Should consider the distinct atoms when counting;",
+    "gold_sql": "SELECT COUNT(DISTINCT CASE WHEN T1.element = 'i' THEN T1.atom_id ELSE NULL END) AS iodine_nums , COUNT(DISTINCT CASE WHEN T1.element = 's' THEN T1.atom_id ELSE NULL END) AS sulfur_nums FROM atom AS T1 INNER JOIN connected AS T2 ON T1.atom_id = T2.atom_id INNER JOIN bond AS T3 ON T2.bond_id = T3.bond_id WHERE T3.bond_type = '-'",
+    "pred_sql": "SELECT COUNT(DISTINCT a.atom_id) AS atom_count\nFROM atom a\nJOIN bond b ON a.molecule_id = b.molecule_id\nWHERE a.element IN ('i', 's')\n  AND b.bond_type = '-'",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 85,
+    "db_id": "california_schools",
+    "difficulty": "moderate",
+    "question": "What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school.",
+    "evidence": "Percent (%) Eligible Free (K-12) = `Free Meal Count (K-12)` / `Enrollment (K-12)` * 100%",
+    "gold_sql": "SELECT T1.`Free Meal Count (K-12)` * 100 / T1.`Enrollment (K-12)`, T1.`District Code` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.AdmFName1 = 'Alusine'",
+    "pred_sql": "SELECT\n  f.\"Percent (%) Eligible Free (K-12)\",\n  f.\"District Code\"\nFROM frpm AS f\nJOIN schools AS s\n  ON f.CDSCode = s.CDSCode\nWHERE s.AdmFName1 = 'Alusine'",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 405,
+    "db_id": "card_games",
+    "difficulty": "moderate",
+    "question": "How many Brazilian Portuguese translated sets are inside the Commander block?",
+    "evidence": "Commander block refer to block = 'Commander'; sets refer to code = setCode; Portuguese refer to language = 'Portuguese (Brasil)'",
+    "gold_sql": "SELECT COUNT(T1.id) FROM sets AS T1 INNER JOIN set_translations AS T2 ON T1.code = T2.setCode WHERE T2.language = 'Portuguese (Brazil)' AND T1.block = 'Commander'",
+    "pred_sql": "SELECT COUNT(*) AS count\nFROM set_translations st\nJOIN sets s ON st.setCode = s.code\nWHERE s.block = 'Commander'\n  AND st.language = 'Portuguese (Brasil)'",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 1094,
+    "db_id": "european_football_2",
+    "difficulty": "challenging",
+    "question": "How much higher in percentage is Ariel Borysiuk's overall rating than that of Paulin Puel?",
+    "evidence": "how much higher in percentage = MULTIPLY(DIVIDE(SUBTRACT(overall_rating WHERE player_name = 'Ariel Borysiuk', overall_rating WHERE player_name = 'Paulin Puel'), overall_rating WHERE player_name = 'Paulin Puel'), 100);",
+    "gold_sql": "SELECT (SUM(CASE WHEN t1.player_name = 'Ariel Borysiuk' THEN t2.overall_rating ELSE 0 END) * 1.0 - SUM(CASE WHEN t1.player_name = 'Paulin Puel' THEN t2.overall_rating ELSE 0 END)) * 100 / SUM(CASE WHEN t1.player_name = 'Paulin Puel' THEN t2.overall_rating ELSE 0 END) FROM Player AS t1 INNER JOIN Player_Attributes AS t2 ON t1.player_api_id = t2.player_api_id",
+    "pred_sql": "SELECT\n  CAST((pa1.overall_rating - pa2.overall_rating) AS REAL) * 100 / pa2.overall_rating AS percentage\nFROM Player_Attributes pa1\nJOIN Player p1 ON pa1.player_api_id = p1.player_api_id\nJOIN Player_Attributes pa2 ON pa2.player_api_id = (\n  SELECT player_api_id FROM Player WHERE player_name = 'Paulin Puel'\n)\nJOIN Player p2 ON pa2.player_api_id = p2.player_api_id\nWHERE p1.player_name = 'Ariel Borysiuk'\n  AND pa1.date = pa2.date\nLIMIT 1",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 159,
+    "db_id": "financial",
+    "difficulty": "simple",
+    "question": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+    "evidence": "operation = 'VYBER' refers to withdrawal in cash",
+    "gold_sql": "SELECT T4.trans_id FROM client AS T1 INNER JOIN disp AS T2 ON T1.client_id = T2.client_id INNER JOIN account AS T3 ON T2.account_id = T3.account_id INNER JOIN trans AS T4 ON T3.account_id = T4.account_id WHERE T1.client_id = 3356 AND T4.operation = 'VYBER'",
+    "pred_sql": "SELECT t.trans_id, t.account_id, t.date, t.type, t.operation, t.amount, t.balance, t.k_symbol, t.bank, t.account\nFROM trans t\nJOIN disp d ON t.account_id = d.account_id\nWHERE d.client_id = 3356\n  AND t.operation = 'VYBER'",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 769,
+    "db_id": "superhero",
+    "difficulty": "challenging",
+    "question": "Which superhero has the most durability published by Dark Horse Comics?",
+    "evidence": "which superhero refers to superhero_name; most durability refers to MAX(attribute_value) WHERE attribute_name = 'durability'; published by Dark Horse Comics refers to publisher_name = 'Dark Horse Comics';",
+    "gold_sql": "SELECT T1.superhero_name FROM superhero AS T1 INNER JOIN hero_attribute AS T2 ON T1.id = T2.hero_id INNER JOIN attribute AS T3 ON T3.id = T2.attribute_id INNER JOIN publisher AS T4 ON T4.id = T1.publisher_id WHERE T4.publisher_name = 'Dark Horse Comics' AND T3.attribute_name = 'Durability' ORDER BY T2.attribute_value DESC LIMIT 1",
+    "pred_sql": "SELECT s.superhero_name\nFROM superhero s\nJOIN publisher p ON s.publisher_id = p.id\nJOIN hero_attribute ha ON s.id = ha.hero_id\nJOIN attribute a ON ha.attribute_id = a.id\nWHERE p.publisher_name = 'Dark Horse Comics'\n  AND a.attribute_name = 'durability'\nORDER BY ha.attribute_value DESC\nLIMIT 1",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 1225,
+    "db_id": "thrombosis_prediction",
+    "difficulty": "moderate",
+    "question": "List and group all patients by sex for total bilirubin (T-BIL) level not within the normal range.",
+    "evidence": "List refers to GROUP_CONCAT(DISTINCT ID); total bilirubin (T-BIL) not within normal range refers to T-BIL > = 2.0",
+    "gold_sql": "SELECT T1.ID,T1.SEX FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.`T-BIL` >= 2.0 GROUP BY T1.SEX,T1.ID",
+    "pred_sql": "SELECT \n    p.SEX,\n    GROUP_CONCAT(DISTINCT p.ID) AS patient_ids\nFROM Patient p\nJOIN Laboratory l ON p.ID = l.ID\nWHERE l.\"T-BIL\" >= 2.0\nGROUP BY p.SEX",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 244,
+    "db_id": "toxicology",
+    "difficulty": "moderate",
+    "question": "Is the molecule with the most double bonds carcinogenic?",
+    "evidence": "double bond refers to bond_type = ' = '; label = '+' mean molecules are carcinogenic",
+    "gold_sql": "SELECT T1.label FROM molecule AS T1 INNER JOIN ( SELECT T.molecule_id, COUNT(T.bond_type) FROM bond AS T WHERE T.bond_type = '=' GROUP BY T.molecule_id ORDER BY COUNT(T.bond_type) DESC LIMIT 1 ) AS T2 ON T1.molecule_id = T2.molecule_id",
+    "pred_sql": "SELECT m.label\nFROM molecule m\nJOIN bond b ON m.molecule_id = b.molecule_id\nWHERE b.bond_type = ' = '\nGROUP BY m.molecule_id\nORDER BY COUNT(*) DESC\nLIMIT 1",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 634,
+    "db_id": "codebase_community",
+    "difficulty": "challenging",
+    "question": "Among posts by Harvey Motulsky and Noah Snyder, which one has higher popularity?",
+    "evidence": "Has higher popularity means the post has higher view count ; calculation = MAX(SUM(ViewCount)) where DisplayName = 'Harvey Motulsky' OR DisplayName = 'Noah Snyder';",
+    "gold_sql": "SELECT T1.DisplayName FROM users AS T1 INNER JOIN postHistory AS T2 ON T1.Id = T2.UserId INNER JOIN posts AS T3 ON T2.PostId = T3.Id WHERE T1.DisplayName = 'Harvey Motulsky' OR T1.DisplayName = 'Noah Snyder' GROUP BY T1.DisplayName ORDER BY SUM(T3.ViewCount) DESC LIMIT 1",
+    "pred_sql": "SELECT \n    u.DisplayName,\n    SUM(p.ViewCount) AS TotalViewCount\nFROM posts p\nJOIN users u ON p.OwnerUserId = u.Id\nWHERE u.DisplayName IN ('Harvey Motulsky', 'Noah Snyder')\nGROUP BY u.DisplayName\nORDER BY TotalViewCount DESC\nLIMIT 1",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 1107,
+    "db_id": "european_football_2",
+    "difficulty": "moderate",
+    "question": "When was the first time did Kevin Constant have his highest crossing score? Give the date.",
+    "evidence": "Kevin Constant refers to player_name = 'Kevin Constant'; highest crossing score refers to MAX(crossing)",
+    "gold_sql": "SELECT `date` FROM ( SELECT t2.crossing, t2.`date` FROM Player AS t1 INNER JOIN Player_Attributes AS t2 ON t1.player_fifa_api_id = t2.player_fifa_api_id WHERE t1.player_name = 'Kevin Constant' ORDER BY t2.crossing DESC) ORDER BY date DESC LIMIT 1",
+    "pred_sql": "SELECT pa.date\nFROM Player_Attributes pa\nJOIN Player p ON pa.player_api_id = p.player_api_id\nWHERE p.player_name = 'Kevin Constant'\n  AND pa.crossing = (\n    SELECT MAX(pa2.crossing)\n    FROM Player_Attributes pa2\n    JOIN Player p2 ON pa2.player_api_id = p2.player_api_id\n    WHERE p2.player_name = 'Kevin Constant'\n  )\nORDER BY pa.date ASC\nLIMIT 1",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 168,
+    "db_id": "financial",
+    "difficulty": "moderate",
+    "question": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+    "evidence": "Female refers to gender = 'F'; Woman and female are closed; Average salary can be found in A11",
+    "gold_sql": "SELECT CAST(SUM(T2.gender = 'F') AS REAL) * 100 / COUNT(T2.client_id) FROM district AS T1 INNER JOIN client AS T2 ON T1.district_id = T2.district_id WHERE T1.A11 > 10000",
+    "pred_sql": "SELECT \n    CAST(SUM(CASE WHEN c.gender = 'F' THEN 1 ELSE 0 END) AS REAL) * 100.0 / COUNT(*) AS percentage\nFROM client c\nJOIN disp d ON c.client_id = d.client_id\nJOIN account a ON d.account_id = a.account_id\nJOIN district dist ON a.district_id = dist.district_id\nWHERE dist.A11 > 10000",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 944,
+    "db_id": "formula_1",
+    "difficulty": "challenging",
+    "question": "How much faster in percentage is the champion than the driver who finished the race last in the 2008 Australian Grand Prix?",
+    "evidence": "how much faster in percentage = divide(subtract(incremental time, champion time), last_driver time) * 100; last driver finished time = incremental time + champion time; only champion's finished time is represented by 'HH:MM:SS.mmm'; finished the game refers to time is not null",
+    "gold_sql": "WITH time_in_seconds AS ( SELECT T1.positionOrder, CASE WHEN T1.positionOrder = 1 THEN (CAST(SUBSTR(T1.time, 1, 1) AS REAL) * 3600) + (CAST(SUBSTR(T1.time, 3, 2) AS REAL) * 60) + CAST(SUBSTR(T1.time, 6) AS REAL) ELSE CAST(SUBSTR(T1.time, 2) AS REAL) END AS time_seconds FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T2.name = 'Australian Grand Prix' AND T1.time IS NOT NULL AND T2.year = 2008 ), champion_time AS ( SELECT time_seconds FROM time_in_seconds WHERE positionOrder = 1), last_driver_incremental AS ( SELECT time_seconds FROM time_in_seconds WHERE positionOrder = (SELECT MAX(positionOrder) FROM time_in_seconds) ) SELECT (CAST((SELECT time_seconds FROM last_driver_incremental) AS REAL) * 100) / (SELECT time_seconds + (SELECT time_seconds FROM last_driver_incremental) FROM champion_time)",
+    "pred_sql": null,
+    "status": "failure",
+    "error": "Rejected by the SQL guard: Could not parse the SQL: Error tokenizing '_ms) / last_ms) * 100"
+   },
+   {
+    "question_id": 1256,
+    "db_id": "thrombosis_prediction",
+    "difficulty": "moderate",
+    "question": "How many patients with a abnormal C-reactive protein don't have their data recorded?",
+    "evidence": "abnormal C-reactive protein refers to CRP ='+'; don't have data recorded refers to Description IS NULL;",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE (T2.CRP = '+' ) AND T1.Description IS NULL",
+    "pred_sql": "SELECT COUNT(DISTINCT p.ID) AS count\nFROM Patient p\nJOIN Laboratory l ON p.ID = l.ID\nWHERE l.CRP = '+'\n  AND p.Description IS NULL",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 530,
+    "db_id": "card_games",
+    "difficulty": "moderate",
+    "question": "List all the frame styles and cards Allen Williams worked on and find any banned cards if there are any.",
+    "evidence": "frame styles refers to frameVersion; cards Allen Williams worked on refers to artist = 'Allen Williams'; banned cards refers to status = 'Banned'",
+    "gold_sql": "SELECT DISTINCT T1.frameVersion, T1.name , IIF(T2.status = 'Banned', T1.name, 'NO') FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T1.artist = 'Allen Williams'",
+    "pred_sql": "SELECT DISTINCT c.frameVersion, c.name\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE c.artist = 'Allen Williams'\n  AND l.status = 'Banned'",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 978,
+    "db_id": "formula_1",
+    "difficulty": "simple",
+    "question": "How many times the circuits were held in Austria? Please give their location and coordinates.",
+    "evidence": "location coordinates refers to (lat,lng); Austria refers to country = 'Austria';",
+    "gold_sql": "SELECT DISTINCT location, lat, lng FROM circuits WHERE country = 'Austria'",
+    "pred_sql": "SELECT \n  c.location,\n  c.lat,\n  c.lng,\n  COUNT(r.raceId) AS times\nFROM circuits c\nJOIN races r ON c.circuitId = r.circuitId\nWHERE c.country = 'Austria'\nGROUP BY c.circuitId, c.location, c.lat, c.lng",
+    "status": "success",
+    "error": null
+   },
+   {
+    "question_id": 989,
+    "db_id": "formula_1",
+    "difficulty": "moderate",
+    "question": "Who is the champion of the Canadian Grand Prix in 2008? Indicate his finish time.",
+    "evidence": "Only the time of the champion shows in the format of \"hour: minutes: seconds.millionsecond\";",
+    "gold_sql": "SELECT T1.time FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T2.name = 'Canadian Grand Prix' AND T2.year = 2008 AND T1.time LIKE '_:%:__.___'",
+    "pred_sql": "SELECT \n    d.forename,\n    d.surname,\n    r.time\nFROM results r\nJOIN races ra ON r.raceId = ra.raceId\nJOIN drivers d ON r.driverId = d.driverId\nWHERE ra.year = 2008\n  AND ra.name = 'Canadian Grand Prix'\n  AND r.position = 1",
+    "status": "success",
+    "error": null
    }
   ]
  },
  "provider_requests": {
-  "groq": 11
+  "groq": 50
  }
 }

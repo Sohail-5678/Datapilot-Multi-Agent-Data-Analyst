@@ -1,15 +1,235 @@
 {
  "schema": "datapilot.bench-summary.v1",
- "generated_at": "2026-10-08T20:51:28Z",
+ "generated_at": "2026-10-08T21:12:48Z",
  "benchmark": "BIRD Mini-Dev (SQLite), fixed stratified 150-question subset (seed 13; train/val/test 50 each)",
  "metric": "EX — execution accuracy, BIRD official set comparison of predicted vs gold result rows",
  "cost_note": "list_price_cost_usd = tokens × published paid list price; actual spend is $0 (free tiers)",
  "inclusion_rule": "latest real (non-fake) run per config on subset_150 with n ≥ 20; test split preferred",
- "preview": true,
- "configs": {},
- "ablation": [],
- "per_difficulty": {},
- "per_db": {},
- "failed_cases": [],
- "note": "No qualifying benchmark run has been recorded yet."
+ "preview": false,
+ "configs": {
+  "C0": {
+   "config": "C0",
+   "label": "baseline",
+   "description": "One LLM call: full schema with column descriptions + BIRD evidence, one direct candidate. No linking, voting, repair, verifier or cache.",
+   "split": "test",
+   "n": 50,
+   "n_planned": 50,
+   "preview": false,
+   "ex": 0.48,
+   "ex_ci95": [
+    0.34,
+    0.62
+   ],
+   "correct": 24,
+   "llm_calls_per_question": 1.0,
+   "tokens_per_question": 2243.7,
+   "cost_per_question_usd": 0.000686,
+   "latency_p50_ms": 929.5,
+   "latency_p95_ms": 1589.7,
+   "models": {
+    "qwen/qwen3.8-27b": 50
+   },
+   "degraded_questions": 0,
+   "cache_hit_rate": 0.0,
+   "agent_version": "307a09d6e225+dirty",
+   "profile_version": "datapilot@1",
+   "updated_at": "2026-10-08T21:12:48Z",
+   "result_file": "results/2026-10-08_C0_test.json"
+  }
+ },
+ "ablation": [
+  {
+   "config": "C0",
+   "label": "baseline",
+   "split": "test",
+   "n": 50,
+   "preview": false,
+   "ex": 0.48,
+   "ex_ci95": [
+    0.34,
+    0.62
+   ],
+   "llm_calls_per_question": 1.0,
+   "tokens_per_question": 2243.7,
+   "cost_per_question_usd": 0.000686,
+   "latency_p50_ms": 929.5,
+   "latency_p95_ms": 1589.7
+  }
+ ],
+ "per_difficulty": {
+  "C0": {
+   "simple": {
+    "n": 14,
+    "ex": 0.7143
+   },
+   "moderate": {
+    "n": 25,
+    "ex": 0.4
+   },
+   "challenging": {
+    "n": 11,
+    "ex": 0.3636
+   }
+  }
+ },
+ "per_db": {
+  "C0": {
+   "california_schools": {
+    "n": 3,
+    "ex": 0.3333
+   },
+   "card_games": {
+    "n": 5,
+    "ex": 0.4
+   },
+   "codebase_community": {
+    "n": 5,
+    "ex": 0.8
+   },
+   "debit_card_specializing": {
+    "n": 3,
+    "ex": 0.6667
+   },
+   "european_football_2": {
+    "n": 5,
+    "ex": 0.4
+   },
+   "financial": {
+    "n": 4,
+    "ex": 0.0
+   },
+   "formula_1": {
+    "n": 7,
+    "ex": 0.2857
+   },
+   "student_club": {
+    "n": 4,
+    "ex": 0.75
+   },
+   "superhero": {
+    "n": 5,
+    "ex": 0.8
+   },
+   "thrombosis_prediction": {
+    "n": 5,
+    "ex": 0.6
+   },
+   "toxicology": {
+    "n": 4,
+    "ex": 0.25
+   }
+  }
+ },
+ "failed_cases": [
+  {
+   "config": "C0",
+   "question_id": 37,
+   "db_id": "california_schools",
+   "difficulty": "moderate",
+   "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+   "evidence": "Execellence Rate = NumGE1500 / NumTstTakr; complete address has Street, City, State, Zip code",
+   "gold_sql": "SELECT T2.Street, T2.City, T2.State, T2.Zip FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY CAST(T1.NumGE1500 AS REAL) / T1.NumTstTakr ASC LIMIT 1",
+   "pred_sql": "SELECT s.Street, s.City, s.Zip, s.State\nFROM satscores sat\nJOIN schools s ON sat.cds = s.CDSCode\nWHERE sat.NumTstTakr > 0\nORDER BY CAST(sat.NumGE1500 AS REAL) / sat.NumTstTakr ASC\nLIMIT 1",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 344,
+   "db_id": "card_games",
+   "difficulty": "moderate",
+   "question": "List all the mythic rarity print cards banned in gladiator format.",
+   "evidence": "mythic rarity printing refers to rarity = 'mythic'; card banned refers to status = 'Banned'; in gladiator format refers to format = 'gladiator';",
+   "gold_sql": "SELECT DISTINCT T1.id FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.format = 'gladiator' AND T2.status = 'Banned' AND T1.rarity = 'mythic'",
+   "pred_sql": "SELECT c.name\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE c.rarity = 'mythic'\n  AND l.status = 'Banned'\n  AND l.format = 'gladiator'",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 1031,
+   "db_id": "european_football_2",
+   "difficulty": "challenging",
+   "question": "At present, calculate for the player's age who have a sprint speed of no less than 97 between 2013 to 2015.",
+   "evidence": "players age at present = SUBTRACT((DATETIME(), birthday)); sprint speed of no less than 97 refers to sprint_speed > = 97; between 2013 to 2015 refers to YEAR(date) > = '2013' AND YEAR(date) < = '2015'; ",
+   "gold_sql": "SELECT DISTINCT DATETIME() - T2.birthday age FROM Player_Attributes AS t1 INNER JOIN Player AS t2 ON t1.player_api_id = t2.player_api_id WHERE STRFTIME('%Y',t1.`date`) >= '2013' AND STRFTIME('%Y',t1.`date`) <= '2015' AND t1.sprint_speed >= 97",
+   "pred_sql": "SELECT\n    CAST((julianday('now') - julianday(p.birthday)) / 365.25 AS INTEGER) AS age\nFROM Player p\nJOIN Player_Attributes pa\n    ON p.player_api_id = pa.player_api_id\nWHERE pa.sprint_speed >= 97\n  AND substr(pa.date, 1, 4) BETWEEN '2013' AND '2015'",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 125,
+   "db_id": "financial",
+   "difficulty": "challenging",
+   "question": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+   "evidence": "Unemployment increment rate in percentage = [(unemployment rate 2016 - unemployment rate 2015) / unemployment rate 2015] * 100; unemployment rate 2015 appears in the A12; unemployment rate 2016 appears in the A13; Loan contracts which are still running where client are in debt can be presented as status = 'D'",
+   "gold_sql": "SELECT CAST((T3.A13 - T3.A12) AS REAL) * 100 / T3.A12 FROM loan AS T1 INNER JOIN account AS T2 ON T1.account_id = T2.account_id INNER JOIN district AS T3 ON T2.district_id = T3.district_id WHERE T1.status = 'D'",
+   "pred_sql": "SELECT \n    d.A2 AS district,\n    CAST((d.A13 - d.A12) AS REAL) / d.A12 * 100 AS unemployment_increment_rate\nFROM loan l\nJOIN account a ON l.account_id = a.account_id\nJOIN district d ON a.district_id = d.district_id\nWHERE l.status = 'D'",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 847,
+   "db_id": "formula_1",
+   "difficulty": "simple",
+   "question": "What is the surname of the driver with the best lap time in race number 19 in the second qualifying period?",
+   "evidence": "race number refers to raceId; second qualifying period refers to q2; best lap time refers to MIN(q2);",
+   "gold_sql": "SELECT T2.surname FROM qualifying AS T1 INNER JOIN drivers AS T2 ON T2.driverId = T1.driverId WHERE T1.raceId = 19 ORDER BY T1.q2 ASC LIMIT 1",
+   "pred_sql": "SELECT d.surname\nFROM qualifying q\nJOIN drivers d ON q.driverId = d.driverId\nWHERE q.raceId = 19\n  AND q.q2 IS NOT NULL\nORDER BY q.q2 ASC\nLIMIT 1",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 1322,
+   "db_id": "student_club",
+   "difficulty": "moderate",
+   "question": "Among the events attended by more than 10 members of the Student_Club, how many of them are meetings?",
+   "evidence": "meetings events refers to type = 'Meeting'; attended by more than 10 members refers to COUNT(event_id) > 10",
+   "gold_sql": "SELECT T1.event_name FROM event AS T1  INNER JOIN attendance AS T2 ON T1.event_id = T2.link_to_event GROUP BY T1.event_id  HAVING COUNT(T2.link_to_event) > 10 EXCEPT SELECT T1.event_name  FROM event AS T1  WHERE T1.type = 'Meeting'",
+   "pred_sql": "SELECT COUNT(*) AS meeting_count\nFROM event e\nJOIN attendance a ON e.event_id = a.link_to_event\nWHERE e.type = 'Meeting'\nGROUP BY e.event_id\nHAVING COUNT(a.link_to_member) > 10",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 197,
+   "db_id": "toxicology",
+   "difficulty": "moderate",
+   "question": "Calculate the average number of oxygen atoms in single-bonded molecules.",
+   "evidence": "single-bonded molecules refers to bond_type = '-' ; average number of oxygen atom = AVG(element = 'o')",
+   "gold_sql": "SELECT AVG(oxygen_count) FROM (SELECT T1.molecule_id, COUNT(T1.element) AS oxygen_count FROM atom AS T1 INNER JOIN bond AS T2 ON T1.molecule_id = T2.molecule_id  WHERE T2.bond_type = '-' AND T1.element = 'o'  GROUP BY T1.molecule_id) AS oxygen_counts",
+   "pred_sql": "SELECT AVG(CASE WHEN a.element = 'o' THEN 1 ELSE 0 END) AS avg_oxygen\nFROM atom a\nJOIN bond b ON a.molecule_id = b.molecule_id\nWHERE b.bond_type = '-'",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 1500,
+   "db_id": "debit_card_specializing",
+   "difficulty": "simple",
+   "question": "Please list the product description of the products consumed in September, 2013.",
+   "evidence": "September 2013 refers to 201309; The first 4 strings of the Date values in the yearmonth table can represent year; The 5th and 6th string of the date can refer to month.",
+   "gold_sql": "SELECT T3.Description FROM transactions_1k AS T1 INNER JOIN yearmonth AS T2 ON T1.CustomerID = T2.CustomerID INNER JOIN products AS T3 ON T1.ProductID = T3.ProductID WHERE T2.Date = '201309'",
+   "pred_sql": "SELECT DISTINCT p.Description\nFROM transactions_1k t\nJOIN products p ON t.ProductID = p.ProductID\nWHERE strftime('%Y-%m', t.Date) = '2013-09'",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 152,
+   "db_id": "financial",
+   "difficulty": "moderate",
+   "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+   "evidence": "A3 refers to region names; A15 stands for the average number of crimes commited in 1995.",
+   "gold_sql": "SELECT AVG(T1.A15) FROM district AS T1 INNER JOIN account AS T2 ON T1.district_id = T2.district_id WHERE STRFTIME('%Y', T2.date) >= '1997' AND T1.A15 > 4000",
+   "pred_sql": "SELECT AVG(d.A15) AS average_crimes_1995\nFROM district d\nWHERE d.A15 > 4000\n  AND EXISTS (\n    SELECT 1\n    FROM account a\n    WHERE a.district_id = d.district_id\n      AND substr(a.date, 1, 2) >= '97'\n  )",
+   "error": null
+  },
+  {
+   "config": "C0",
+   "question_id": 884,
+   "db_id": "formula_1",
+   "difficulty": "moderate",
+   "question": "List the names of all races that occurred in the earliest recorded year and month.",
+   "evidence": "earliest recorded year and month refers to year = year(min(date)) and month = month(min(date));",
+   "gold_sql": "SELECT name FROM races WHERE STRFTIME('%Y', date) = ( SELECT STRFTIME('%Y', date) FROM races ORDER BY date ASC LIMIT 1 ) AND STRFTIME('%m', date) = ( SELECT STRFTIME('%m', date) FROM races ORDER BY date ASC LIMIT 1 )",
+   "pred_sql": "SELECT r.name\nFROM races r\nWHERE r.date = (SELECT MIN(date) FROM races)",
+   "error": null
+  }
+ ]
 }
