@@ -28,7 +28,7 @@ def raw(settings) -> dict:
 
 def test_default_profile_loads(raw):
     p = default_profile()
-    assert p.version == 1 and p.version_label == "datapilot@1"
+    assert p.version == 2 and p.version_label == "datapilot@2"
     assert set(REQUIRED_PROMPTS) <= set(p.prompts)
     for name in REQUIRED_PROMPTS:
         assert p.prompts[name].strip()

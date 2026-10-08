@@ -4,6 +4,7 @@ vote tie, adaptive k, budget stop, provider fallback, sandbox, and the trace.v1 
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import json
 
 import pytest
@@ -319,7 +320,8 @@ def live_router(monkeypatch, settings):
 
 
 def _ctx() -> RunCtx:
-    return RunCtx(run_id="router-test", db_id="chinook", profile=default_profile())
+    # No profile routing: these tests exercise the router's chain logic with explicit `kinds`.
+    return RunCtx(run_id="router-test", db_id="chinook", profile=dataclasses.replace(default_profile(), routing={}))
 
 
 async def test_fallback_when_primary_provider_unconfigured(live_router):
@@ -407,8 +409,8 @@ async def test_nothing_configured_raises_unavailable(live_router):
 
 
 def test_routing_chain_comes_from_the_profile(settings):
-    ctx = _ctx()
-    assert router.chain_for(ctx, "planner", ["fast"]) == ["main", "fast"]
+    ctx = RunCtx(run_id="router-test", db_id="chinook", profile=default_profile())
+    assert router.chain_for(ctx, "planner", ["fast"]) == ["lite", "fast", "main"]
     assert router.chain_for(ctx, "sql_direct", ["main"]) == ["fast", "main"]
     assert router.chain_for(None, "planner", ["lite"]) == ["lite"]
 
@@ -544,7 +546,7 @@ async def test_trace_v1_shape(ask):
         "metrics",
         "feedback",
     }
-    assert t["agent"] == "datapilot" and t["profile_version"] == "datapilot@1" and t["mode"] == "eval"
+    assert t["agent"] == "datapilot" and t["profile_version"] == "datapilot@2" and t["mode"] == "eval"
     assert t["status"] in TRACE_STATUSES and t["status"] == "success"
     assert t["trace_id"] == r.ctx.run_id and t["started_at"] <= t["ended_at"]
     assert "someone@example.com" not in t["input"]["question"] and "[email]" in t["input"]["question"]

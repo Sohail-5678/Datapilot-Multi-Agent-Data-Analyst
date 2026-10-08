@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     lite_model: str = Field(default="gemini-3.1-flash-lite-preview", alias="LITE_MODEL")
     gemini_thinking_level: str = Field(default="minimal", alias="GEMINI_THINKING_LEVEL")
     gemini_timeout_s: float = Field(default=14.0, alias="GEMINI_TIMEOUT_S")  # preview models can stall; fall back fast
-    slow_call_s: float = Field(default=12.0, alias="SLOW_CALL_S")  # a slower success cools the provider down
+    slow_call_s: float = Field(default=8.0, alias="SLOW_CALL_S")  # a slower success cools the provider down
     provider_cooldown_s: float = Field(default=120.0, alias="PROVIDER_COOLDOWN_S")
     embed_model: str = Field(default="gemini-embedding-001", alias="EMBED_MODEL")
     embed_dim: int = Field(default=768, alias="EMBED_DIM")
