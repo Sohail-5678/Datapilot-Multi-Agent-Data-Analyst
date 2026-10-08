@@ -143,7 +143,7 @@ Ask one question from the terminal: `uv run python scripts/ask.py chinook "Which
 | Neon free (optional) | app Postgres | compute pauses |
 | GitHub Actions | CI and benchmark runs (public repo) | — |
 
-1. **API:** Render dashboard → **New → Blueprint** → this repo. Paste `GROQ_API_KEY` (required); `GEMINI_API_KEY` and a Neon `DATABASE_URL` are optional. Without Neon, conversations live in an ephemeral SQLite file that resets when the free instance restarts. The public half of the web app's signing key is already in `render.yaml`.
+1. **API:** [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Sohail-5678/Datapilot-Multi-Agent-Data-Analyst) (or Render dashboard → **New → Blueprint** → this repo). Paste `GROQ_API_KEY` (required); `GEMINI_API_KEY` and a Neon `DATABASE_URL` are optional. Without Neon, conversations live in an ephemeral SQLite file that resets when the free instance restarts. The public half of the web app's signing key is already in `render.yaml`.
 2. **Web:** `cd apps/web && vercel deploy --prod`. Env: `BACKEND_URL`, `JWT_PRIVATE_KEY`, `AUTH_SECRET`, optional `AUTH_GITHUB_ID`/`AUTH_GITHUB_SECRET` (OAuth callback `https://datapilot-analyst.vercel.app/api/auth/callback/github`), `ADMIN_GITHUB_USERS`.
 3. **Benchmarks in CI:** add `GROQ_API_KEY_BENCH` (and optionally `GEMINI_API_KEY`) as repository secrets, then Actions → **bench** → Run workflow.
 

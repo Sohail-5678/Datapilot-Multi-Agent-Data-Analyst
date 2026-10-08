@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, TypeVar
 
 from sqlalchemy import Engine, create_engine, event
@@ -18,6 +19,8 @@ T = TypeVar("T")
 @lru_cache
 def get_engine() -> Engine:
     url = get_settings().sqlalchemy_url
+    if url.startswith("sqlite:///") and not url.startswith("sqlite:///:memory:"):
+        Path(url.removeprefix("sqlite:///")).parent.mkdir(parents=True, exist_ok=True)
     if url.startswith("sqlite"):
         engine = create_engine(url, connect_args={"check_same_thread": False, "timeout": 15})
 
