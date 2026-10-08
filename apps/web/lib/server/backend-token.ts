@@ -12,6 +12,8 @@ export interface BackendClaims {
   login?: string | null;
   /** "upload": a token handed to the browser for one direct file upload to the API (scoped server-side). */
   scope?: "upload";
+  /** Visitor IP as seen by Vercel — the API rate-limits anonymous browsing by it (it only sees Vercel's IPs). */
+  ip?: string;
 }
 
 let cached: { raw: string; key: Promise<CryptoKey> } | null = null;
@@ -30,8 +32,8 @@ export async function mintBackendToken(
   privateKey: string = process.env.JWT_PRIVATE_KEY ?? "",
 ): Promise<string> {
   const key = await signingKey(privateKey);
-  const { sub, login, scope, ...rest } = claims;
-  return new SignJWT({ ...rest, ...(login ? { login } : {}), ...(scope ? { scope } : {}) })
+  const { sub, login, scope, ip, ...rest } = claims;
+  return new SignJWT({ ...rest, ...(login ? { login } : {}), ...(scope ? { scope } : {}), ...(ip ? { ip } : {}) })
     .setProtectedHeader({ alg: "ES256", typ: "JWT" })
     .setIssuer("datapilot-web")
     .setAudience("datapilot-api")

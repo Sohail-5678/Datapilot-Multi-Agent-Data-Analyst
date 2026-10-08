@@ -507,3 +507,14 @@ async def test_schema_endpoint_masks_pii_samples(client, auth):
     assert country["pii"] is False and "Brazil" in country["samples"]
     assert r.json()["erd"].startswith("erDiagram")
     assert (await client.get("/v1/databases/nope/schema", headers=auth())).status_code == 404
+
+
+async def test_rate_limit_is_per_identity_not_per_proxy_ip(client, make_token, monkeypatch, settings):
+    """Every request comes from the Vercel proxy's IP; one busy user must not lock out everyone else."""
+    monkeypatch.setattr(settings, "rate_ip_per_min", 3)
+    vercel = {"x-forwarded-for": "76.76.21.21"}
+    alice = {"Authorization": f"Bearer {make_token('github:alice')}", **vercel}
+    bob = {"Authorization": f"Bearer {make_token('github:bob')}", **vercel}
+    codes = [(await client.get("/v1/threads", headers=alice)).status_code for _ in range(4)]
+    assert codes[:3] == [200, 200, 200] and codes[3] == 429
+    assert (await client.get("/v1/threads", headers=bob)).status_code == 200

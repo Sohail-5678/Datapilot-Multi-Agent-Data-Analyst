@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from datapilot import agentforge, persist
 from datapilot.api import ratelimit
-from datapilot.api.auth import Principal, current_principal
+from datapilot.api.auth import Principal, current_principal, decode_token
 from datapilot.api.errors import ApiError, api_error_handler
 from datapilot.api.runs import get_handle, llm_status, resolve, start_run, stream
 from datapilot.config import BACKEND_ROOT, get_settings
@@ -75,16 +75,27 @@ app.add_middleware(
 )
 
 
+def _limit_key(request: Request) -> str:
+    """Who to rate-limit. Requests arrive through the Vercel proxy, so the TCP peer / X-Forwarded-For is Vercel's
+    egress IP shared by every visitor; key by the verified token instead (the proxy embeds the visitor's IP for
+    anonymous browsing). Fall back to the forwarded IP when there is no valid token (those requests fail auth)."""
+    auth = request.headers.get("authorization") or ""
+    if auth.lower().startswith("bearer "):
+        try:
+            claims = decode_token(auth.split(" ", 1)[1].strip())
+            sub = str(claims.get("sub", ""))
+            return f"ip:{claims.get('ip')}" if sub.startswith("anon:") and claims.get("ip") else f"sub:{sub}"
+        except ApiError:
+            pass
+    fwd = request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")
+    return "ip:" + fwd.split(",")[0].strip()
+
+
 @app.middleware("http")
 async def guard_requests(request: Request, call_next):  # type: ignore[no-untyped-def]
     if request.url.path.startswith("/v1/"):
-        ip = (
-            (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?"))
-            .split(",")[0]
-            .strip()
-        )
         try:
-            ratelimit.check_ip(ip)
+            ratelimit.check_ip(_limit_key(request))
         except ApiError as e:
             return await api_error_handler(request, e)
     resp = await call_next(request)

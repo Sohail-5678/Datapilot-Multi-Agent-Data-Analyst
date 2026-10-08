@@ -89,3 +89,30 @@ test("upload your own data → ask about it → delete", async ({ page }) => {
   await page.getByRole("button", { name: "Delete" }).first().click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Chinook");
 });
+
+test("switching database mid-conversation starts a new conversation on it", async ({ page }) => {
+  await guest(page, "/app");
+  await page.getByLabel("Ask a question about this database").fill("Which 10 artists have the most tracks?");
+  await page.getByRole("button", { name: "Ask" }).click();
+  await expect(page.getByText("Numbers checked against results")).toBeVisible();
+  await page.locator("#db-pick").selectOption("superhero");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Superhero");
+  await expect(page.getByLabel("Ask a question about this database")).toHaveAttribute("placeholder", /Superhero/);
+});
+
+test("asking right after an upload uses the uploaded data", async ({ page }) => {
+  await guest(page, "/app");
+  await page.getByRole("button", { name: "Upload your data" }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('input[type="file"]').setInputFiles("e2e/fixtures/sales.csv");
+  await dialog.getByRole("checkbox").check();
+  await dialog.getByRole("button", { name: "Upload & analyze" }).click();
+  await dialog.getByRole("button", { name: "Start asking" }).click();
+  // no waiting: type immediately
+  await page.getByLabel("Ask a question about this database").fill("How many orders are there?");
+  await page.getByRole("button", { name: "Ask" }).click();
+  await expect(page.getByText("Numbers checked against results")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("sales");
+  await page.getByRole("tab", { name: "SQL" }).click();
+  await expect(page.getByText(/FROM\s+"?sales/i).first()).toBeVisible();
+});

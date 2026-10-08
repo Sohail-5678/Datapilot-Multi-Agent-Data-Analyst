@@ -230,10 +230,15 @@ export function Workspace({ initialDb, initialQuestion, threadId }: { initialDb:
     if (conv.threadId) router.push(`/app?db=${id}`);
     else setDbId(id);
   };
-  const onUploaded = async (ds: DatabaseInfo) => {
+  const onUploaded = (ds: DatabaseInfo) => {
     setUploadOpen(false);
-    await qc.invalidateQueries({ queryKey: ["dbs"] });
+    // Switch right away (a quick question must not go to the previous database), with the new dataset already
+    // in the cached list; then refresh the list in the background.
+    qc.setQueryData<DatabasesResponse>(["dbs"], (old) =>
+      old ? { ...old, uploaded: [ds, ...(old.uploaded ?? []).filter((d) => d.db_id !== ds.db_id)] } : old,
+    );
     pickDb(ds.db_id);
+    void qc.invalidateQueries({ queryKey: ["dbs"] });
   };
   const onDelete = async (id: string) => {
     await api(`datasets/${id}`, { method: "DELETE" }).catch(() => {});

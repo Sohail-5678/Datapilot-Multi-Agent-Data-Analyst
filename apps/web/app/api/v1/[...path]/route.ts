@@ -35,11 +35,12 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
   if (segments.some((s) => s === ".." || s.includes("/"))) return apiError(400, "bad_request", "Bad path.");
 
   const user = appUserFrom(await auth());
+  const ip = (req.headers.get("x-forwarded-for")?.split(",")[0] ?? req.headers.get("x-real-ip") ?? "").trim().slice(0, 64) || undefined;
   let claims: BackendClaims;
   if (user) {
-    claims = { sub: user.sub, role: user.role, name: user.name, login: user.login };
+    claims = { sub: user.sub, role: user.role, name: user.name, login: user.login, ip };
   } else if (anonymousAllowed(req.method, segments)) {
-    claims = { sub: "anon:public", role: "guest", name: "Visitor" };
+    claims = { sub: "anon:public", role: "guest", name: "Visitor", ip };
   } else {
     return apiError(401, "unauthorized", "Please sign in (or try as a guest).");
   }
