@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 
-/** Minimal, safe Markdown subset for answers: paragraphs, "-"/"*" bullets and **bold**. Rendered as React
+/** Minimal, safe Markdown subset for answers: paragraphs, "-"/"*" bullets, "1." numbered lists and **bold**. Rendered as React
  * text nodes (no HTML injection). */
 function inline(s: string) {
   const parts = s.split(/(\*\*[^*]+\*\*)/g);
@@ -10,16 +10,21 @@ function inline(s: string) {
 }
 
 export function RichText({ text, className }: { text: string; className?: string }) {
-  const blocks: { type: "p" | "ul"; lines: string[] }[] = [];
+  const blocks: { type: "p" | "ul" | "ol"; lines: string[] }[] = [];
   for (const raw of text.split(/\n/)) {
     const line = raw.trimEnd();
     const bullet = /^\s*[-*•]\s+/.test(line);
+    const numbered = /^\s*\d+[.)]\s+/.test(line);
     if (!line.trim()) {
       blocks.push({ type: "p", lines: [] });
       continue;
     }
     const last = blocks[blocks.length - 1];
-    if (bullet) {
+    if (numbered) {
+      const item = line.replace(/^\s*\d+[.)]\s+/, "");
+      if (last?.type === "ol") last.lines.push(item);
+      else blocks.push({ type: "ol", lines: [item] });
+    } else if (bullet) {
       const item = line.replace(/^\s*[-*•]\s+/, "");
       if (last?.type === "ul") last.lines.push(item);
       else blocks.push({ type: "ul", lines: [item] });
@@ -37,6 +42,12 @@ export function RichText({ text, className }: { text: string; className?: string
                 <li key={j}>{inline(l)}</li>
               ))}
             </ul>
+          ) : b.type === "ol" ? (
+            <ol key={i}>
+              {b.lines.map((l, j) => (
+                <li key={j}>{inline(l)}</li>
+              ))}
+            </ol>
           ) : (
             <p key={i}>{inline(b.lines.join(" "))}</p>
           ),
