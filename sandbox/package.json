@@ -1,0 +1,14 @@
+{
+  "name": "datapilot-sandbox-runner",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Node.js Pyodide runner for eval/CI mode (SPEC §8.1) — same lockdown as the browser worker",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "pyodide": "314.0.7"
+  },
+  "engines": { "node": ">=20" }
+}

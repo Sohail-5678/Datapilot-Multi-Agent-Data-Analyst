@@ -1,0 +1,32 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+backend/.devdata/
+# data (downloaded by scripts/fetch_dbs.py; never commit database files)
+*.sqlite
+*.sqlite-*
+*.db
+.cache/
+bench/.llm_cache/
+bench/.bird/
+# node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+test-results/
+playwright-report/
+# os
+.DS_Store

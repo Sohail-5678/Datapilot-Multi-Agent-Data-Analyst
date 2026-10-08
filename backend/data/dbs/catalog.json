@@ -1,0 +1,83 @@
+{
+  "chinook": {
+    "title": "Chinook",
+    "subtitle": "Music store",
+    "description": "A digital music store: artists, albums, tracks, genres, playlists, customers, employees and five years of invoices (2009–2013).",
+    "source": "Chinook sample database by Luis Rocha (MIT License)",
+    "source_url": "https://github.com/lerocha/chinook-database",
+    "license": "MIT",
+    "pii": {
+      "Customer": ["FirstName", "LastName", "Company", "Address", "Phone", "Fax", "Email", "PostalCode"],
+      "Employee": ["FirstName", "LastName", "Address", "Phone", "Fax", "Email", "PostalCode", "BirthDate"],
+      "Invoice": ["BillingAddress", "BillingPostalCode"]
+    },
+    "examples": [
+      "Which 5 genres made the most revenue in 2012, and how did each change vs 2011?",
+      "Is there a correlation between track length and price?",
+      "Which 10 artists have the most tracks?",
+      "Show monthly sales for 2013"
+    ]
+  },
+  "superhero": {
+    "title": "Superhero",
+    "subtitle": "Comic characters",
+    "description": "Superheroes with their publishers, powers, attributes, alignment, race, gender, height and weight.",
+    "source": "BIRD Mini-Dev (CC BY-SA 4.0)",
+    "source_url": "https://bird-bench.github.io/",
+    "license": "CC BY-SA 4.0",
+    "pii": {},
+    "examples": [
+      "Which publisher has the most superheroes?",
+      "What are the 10 most common superpowers?",
+      "Show the best heroes",
+      "Average height of heroes by alignment"
+    ]
+  },
+  "student_club": {
+    "title": "Student Club",
+    "subtitle": "Club budgets & events",
+    "description": "A university student club: members, majors, events, attendance, budgets, expenses and income.",
+    "source": "BIRD Mini-Dev (CC BY-SA 4.0)",
+    "source_url": "https://bird-bench.github.io/",
+    "license": "CC BY-SA 4.0",
+    "pii": {
+      "member": ["first_name", "last_name", "email", "phone", "zip"]
+    },
+    "examples": [
+      "Which events had the highest attendance?",
+      "Total expenses by budget category",
+      "How many members are in each major's department?",
+      "Which event went most over budget?"
+    ]
+  },
+  "formula_1": {
+    "title": "Formula 1",
+    "subtitle": "Races since 1950",
+    "description": "Formula 1 seasons, circuits, races, drivers, constructors, results, qualifying, pit stops and lap times.",
+    "source": "BIRD Mini-Dev (CC BY-SA 4.0), originally the Ergast F1 dataset",
+    "source_url": "https://bird-bench.github.io/",
+    "license": "CC BY-SA 4.0",
+    "pii": {},
+    "examples": [
+      "Which drivers have the most race wins?",
+      "Which constructor scored the most points in 2010?",
+      "How many races were held in each country?",
+      "What was Lewis Hamilton's fastest lap time ever?"
+    ]
+  },
+  "european_football_2": {
+    "title": "European Football",
+    "subtitle": "Players, teams, matches",
+    "description": "European club football 2008–2016: leagues, teams, matches, players and 180,000 FIFA player-attribute snapshots. Match event XML columns are omitted in this demo copy.",
+    "source": "BIRD Mini-Dev (CC BY-SA 4.0), originally the Kaggle European Soccer Database",
+    "source_url": "https://bird-bench.github.io/",
+    "license": "CC BY-SA 4.0",
+    "pii": {},
+    "examples": [
+      "Show me the best players",
+      "Which league had the most goals in the 2015/2016 season?",
+      "Average overall rating by preferred foot",
+      "Which teams won the most home matches?"
+    ]
+  }
+}
