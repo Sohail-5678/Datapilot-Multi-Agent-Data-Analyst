@@ -30,7 +30,7 @@ export function BenchCharts({ configs }: { configs: BenchConfigRow[] }) {
             <XAxis dataKey="config" tick={tick} axisLine={false} tickLine={false} />
             <YAxis tick={tick} axisLine={false} tickLine={false} unit="%" domain={[0, 100]} />
             <Tooltip formatter={(v) => `${Number(v).toFixed(1)}%`} contentStyle={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12 }} />
-            <Bar dataKey="ex" fill="#1b1e4a" radius={[6, 6, 0, 0]} className="[&_path]:fill-[var(--ink)]">
+            <Bar dataKey="ex" fill="#1b1e4a" radius={[6, 6, 0, 0]} maxBarSize={72} className="[&_path]:fill-[var(--ink)]">
               <ErrorBar dataKey="err" width={8} stroke="var(--accent)" />
               <LabelList dataKey="ex" position="top" formatter={(v) => `${Number(v).toFixed(1)}`} style={{ fill: INK, fontSize: 11, fontFamily: "var(--font-jetbrains)" }} />
             </Bar>
@@ -61,7 +61,7 @@ export function BenchCharts({ configs }: { configs: BenchConfigRow[] }) {
             <YAxis tick={tick} axisLine={false} tickLine={false} unit="%" domain={[0, 100]} />
             <Tooltip formatter={(v) => (v == null ? "—" : `${Number(v).toFixed(1)}%`)} contentStyle={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12 }} />
             {configs.map((c, i) => (
-              <Bar key={c.config} dataKey={c.config} fill={COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} />
+              <Bar key={c.config} dataKey={c.config} fill={COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} maxBarSize={56} />
             ))}
           </BarChart>
         </ResponsiveContainer>
