@@ -10,6 +10,16 @@ Ask a business question in plain English. A team of agents plans it, links it to
 ![stack](https://img.shields.io/badge/LangGraph%20·%20FastAPI%20·%20sqlglot%20·%20Pyodide%20·%20Next.js%2016-d21319)
 ![data](https://img.shields.io/badge/benchmark-BIRD%20Mini--Dev-afaea2)
 
+![DataPilot workspace: a verified answer with plan, confidence badge, grounding check and chart](docs/screenshots/workspace-answer.jpg)
+
+| Landing | Clarifying question | Expensive-query checkpoint |
+|---|---|---|
+| ![landing page](docs/screenshots/landing.jpg) | ![clarify chips](docs/screenshots/clarify.jpg) | ![run this query?](docs/screenshots/confirm.jpg) |
+
+| Databases | How it works | Mobile |
+|---|---|---|
+| ![database catalog](docs/screenshots/databases.jpg) | ![architecture](docs/screenshots/about.jpg) | ![mobile landing](docs/screenshots/landing-mobile.jpg) |
+
 > Demo databases only (Chinook + four BIRD Mini-Dev databases), all read-only. The free API server sleeps after 15 idle minutes, so the first question can take about a minute while it wakes up; the UI says so.
 
 ---

@@ -163,7 +163,8 @@ export function Workspace({ initialDb, initialQuestion, threadId }: { initialDb:
   const askedInitial = useRef(false);
   const dbs = useQuery({ queryKey: ["dbs"], queryFn: () => api<{ databases: DatabaseInfo[] }>("databases").then((r) => r.databases), retry: 2 });
   const schema = useQuery({ queryKey: ["schema", effectiveDb], queryFn: () => api<SchemaInfo>(`databases/${effectiveDb}/schema`) });
-  const threads = useQuery({ queryKey: ["threads", conv.threadId, conv.turns.length], queryFn: () => api<{ threads: ThreadInfo[] }>("threads").then((r) => r.threads) });
+  const finished = conv.turns.filter((t) => t.phase === "done").length;
+  const threads = useQuery({ queryKey: ["threads", conv.threadId, conv.turns.length, finished], queryFn: () => api<{ threads: ThreadInfo[] }>("threads").then((r) => r.threads) });
   const health = useBackendHealth();
 
   // Preload the Python sandbox once the page is idle (SPEC §8.1).

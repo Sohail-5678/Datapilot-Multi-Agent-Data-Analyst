@@ -39,6 +39,9 @@ concurrency:
 
 jobs:
   bench:
+    # Nightly runs are opt-in (repo variable BENCH_NIGHTLY=true, once GROQ_API_KEY_BENCH is set), so the schedule
+    # never fails on a fork or before keys exist. Manual dispatch always runs.
+    if: github.event_name != 'schedule' || vars.BENCH_NIGHTLY == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 330
     env:
