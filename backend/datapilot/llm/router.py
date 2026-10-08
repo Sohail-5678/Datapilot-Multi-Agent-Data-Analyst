@@ -71,6 +71,14 @@ def _breaker_open(provider: str) -> bool:
     return bool(b and b.open_until > time.monotonic())
 
 
+def _cool_down(provider: str, why: str) -> None:
+    """Overloaded (5xx), timed out or very slow: skip this provider for a while instead of making users wait."""
+    secs = get_settings().provider_cooldown_s
+    b = _breakers.setdefault(provider, _Breaker())
+    b.open_until = max(b.open_until, time.monotonic() + secs)
+    log.warning("%s cooling down for %.0f s (%s)", provider, secs, why)
+
+
 def _note(provider: str, ok: bool) -> None:
     b = _breakers.setdefault(provider, _Breaker())
     if ok:
@@ -121,7 +129,8 @@ async def complete(
 
     errors: list[str] = []
     quota_hit = False
-    for kind in chain:
+    for pos, kind in enumerate(chain):
+        has_fallback = any(_configured(model_for(k)[0]) for k in chain[pos + 1 :] if model_for(k)[1])
         provider, model = model_for(kind)
         if not model:
             continue
@@ -145,6 +154,7 @@ async def complete(
             )
         fn = gemini_generate if provider == "gemini" else groq_chat
         for attempt in range(MAX_RETRIES + 1):
+            t0 = time.monotonic()
             try:
                 res = await _traced(
                     ctx,
@@ -158,6 +168,8 @@ async def complete(
                     kind=kind,
                 )
                 _note(provider, True)
+                if has_fallback and time.monotonic() - t0 > s.slow_call_s:
+                    _cool_down(provider, f"slow call {time.monotonic() - t0:.1f} s")
                 if cache_key:
                     ctx.llm_cache[cache_key] = res.__dict__  # type: ignore[union-attr]
                 return res
@@ -169,6 +181,9 @@ async def complete(
                     break  # daily cap: go straight to the fallback
                 if e.status != 429:
                     _note(provider, False)  # rate limits are expected; only real failures trip the breaker
+                if has_fallback and e.status in (0, 500, 502, 503, 504):
+                    _cool_down(provider, f"HTTP {e.status or 'timeout'}")
+                    break  # overloaded or stalled: the fallback answers now instead of a retry later
                 if not e.retryable or attempt == MAX_RETRIES:
                     break
                 wait = e.retry_after if e.retry_after is not None else 0.6 * 2**attempt

@@ -7,9 +7,11 @@ Card embeddings are computed once per schema hash and cached in the app database
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 import re
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 
@@ -62,6 +64,8 @@ class DbIndex:
 
 
 _indexes: dict[str, DbIndex] = {}
+_embed_cooldown_until = 0.0  # after a provider 429/error, stop retrying embeddings on every question
+_embed_lock: asyncio.Lock | None = None
 
 
 def build_index(db: Database) -> DbIndex:
@@ -149,12 +153,25 @@ def _bm25(idx: DbIndex, query: str) -> list[float]:
 
 async def ensure_embeddings(db: Database) -> bool:
     """Load or compute column-card embeddings for this schema hash. Returns True when vectors are available."""
+    global _embed_cooldown_until, _embed_lock
     s = get_settings()
     idx = get_index(db)
     if idx.embeddings is not None:
         return True
-    if not s.gemini_ready:
+    if not s.gemini_ready or time.monotonic() < _embed_cooldown_until:
         return False
+    if _embed_lock is None:
+        _embed_lock = asyncio.Lock()
+    if _embed_lock.locked():
+        return False  # another task is embedding (startup warm-up); questions use BM25 meanwhile
+    async with _embed_lock:
+        return await _ensure_embeddings_locked(db, idx, s)
+
+
+async def _ensure_embeddings_locked(db: Database, idx: DbIndex, s) -> bool:  # type: ignore[no-untyped-def]
+    global _embed_cooldown_until
+    if idx.embeddings is not None:
+        return True
 
     def load(conn):  # type: ignore[no-untyped-def]
         return conn.execute(
@@ -176,7 +193,8 @@ async def ensure_embeddings(db: Database) -> bool:
         vecs = await gemini_embed(idx.cards, "RETRIEVAL_DOCUMENT")
         quota.record("embed", s.embed_model, sum(len(c) // 4 for c in idx.cards))
     except Exception as e:  # noqa: BLE001
-        log.warning("schema embeddings unavailable for %s: %s", db.db_id, e)
+        _embed_cooldown_until = time.monotonic() + 600
+        log.warning("schema embeddings unavailable for %s (retry in 10 min): %s", db.db_id, str(e)[:200])
         return False
     idx.embeddings = vecs
     pii = {(t.name, c.name) for t in db.tables.values() for c in t.columns if c.pii}

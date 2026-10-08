@@ -87,10 +87,13 @@ async def gemini_generate(
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": gen,
     }
+    url = f"{GEMINI_BASE}/models/{model}:generateContent"
+    headers = {"x-goog-api-key": s.gemini_api_key}
     try:
-        r = await client().post(
-            f"{GEMINI_BASE}/models/{model}:generateContent", headers={"x-goog-api-key": s.gemini_api_key}, json=body
-        )
+        r = await client().post(url, headers=headers, json=body, timeout=s.gemini_timeout_s)
+        if r.status_code == 400 and "thinking" in r.text.lower() and "thinkingConfig" in gen:
+            gen.pop("thinkingConfig")  # this model doesn't accept the configured thinking level
+            r = await client().post(url, headers=headers, json=body, timeout=s.gemini_timeout_s)
     except httpx.HTTPError as e:
         raise ProviderError("gemini", 0, f"{type(e).__name__}: {e}") from e
     if r.status_code != 200:
@@ -137,11 +140,19 @@ async def groq_chat(
     return Completion(text, "groq", model, int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0)))
 
 
+EMBED_BATCH = 40
+EMBED_PAUSE_S = 30.0  # free tier counts each text as a request (~100/min): 40 texts every 30 s stays under it
+
+
 async def gemini_embed(texts: list[str], task: str = "RETRIEVAL_DOCUMENT") -> list[list[float]]:
+    import asyncio
+
     s = get_settings()
     out: list[list[float]] = []
-    for i in range(0, len(texts), 100):
-        batch = texts[i : i + 100]
+    for i in range(0, len(texts), EMBED_BATCH):
+        if i:
+            await asyncio.sleep(EMBED_PAUSE_S)
+        batch = texts[i : i + EMBED_BATCH]
         body = {
             "requests": [
                 {
@@ -162,7 +173,7 @@ async def gemini_embed(texts: list[str], task: str = "RETRIEVAL_DOCUMENT") -> li
         except httpx.HTTPError as e:
             raise ProviderError("gemini", 0, str(e)) from e
         if r.status_code != 200:
-            raise ProviderError("gemini", r.status_code, r.text)
+            raise ProviderError("gemini", r.status_code, r.text, _retry_after(r))
         out.extend(_unit(e["values"]) for e in r.json()["embeddings"])
     return out
 

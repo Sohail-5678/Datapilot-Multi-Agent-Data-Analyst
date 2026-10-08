@@ -334,13 +334,40 @@ async def test_fallback_when_primary_provider_unconfigured(live_router):
     assert ctx.llm_calls == 1 and ctx.tokens_in == 10
 
 
-async def test_fallback_after_retryable_errors(live_router):
+async def test_overloaded_provider_falls_back_at_once_and_cools_down(live_router):
     settings, log, behaviour = live_router
     settings.gemini_api_key, settings.groq_api_key = "test-key-not-real", "test-key-not-real"
     behaviour["gemini"] = ProviderError("gemini", 503, "overloaded")
     res = await router.complete(_ctx(), "planner", "sys", "prompt", kinds=["main", "fast"])
     assert res.provider == "groq"
-    assert [p for p, _ in log] == ["gemini"] * (router.MAX_RETRIES + 1) + ["groq"]
+    assert [p for p, _ in log] == ["gemini", "groq"]  # no retries against an overloaded model when a fallback exists
+    log.clear()
+    behaviour.pop("gemini")
+    await router.complete(_ctx(), "narrator", "sys", "prompt", kinds=["main", "fast"])
+    assert [p for p, _ in log] == ["groq"]  # Gemini is cooling down
+
+
+async def test_overloaded_last_resort_is_still_retried(live_router):
+    settings, log, behaviour = live_router
+    settings.gemini_api_key, settings.alt_model = "test-key-not-real", ""
+    behaviour["gemini"] = ProviderError("gemini", 503, "overloaded")
+    with pytest.raises(LLMUnavailable):
+        await router.complete(_ctx(), "planner", "sys", "prompt", kinds=["main"])
+    assert [p for p, _ in log] == ["gemini"] * (router.MAX_RETRIES + 1)
+
+
+async def test_slow_success_cools_provider_down(live_router, monkeypatch):
+    settings, log, _ = live_router
+    settings.gemini_api_key, settings.groq_api_key = "test-key-not-real", "test-key-not-real"
+    clock = iter([100.0, 130.0])  # the Gemini call "takes" 30 s
+    real = router.time.monotonic
+    monkeypatch.setattr(router.time, "monotonic", lambda: next(clock, None) or real())
+    res = await router.complete(_ctx(), "planner", "sys", "prompt", kinds=["main", "fast"])
+    assert res.provider == "gemini"
+    monkeypatch.setattr(router.time, "monotonic", real)
+    log.clear()
+    await router.complete(_ctx(), "planner", "sys", "prompt", kinds=["main", "fast"])
+    assert [p for p, _ in log] == ["groq"]
 
 
 async def test_daily_cap_skips_straight_to_fallback(live_router):
