@@ -141,8 +141,9 @@ async def complete(
             quota_hit = True
             errors.append(f"{kind} daily budget reached")
             continue
-        if _breaker_open(provider):
-            errors.append(f"{provider} circuit open")
+        key = f"{provider}:{model}"  # health is tracked per model: a slow Flash shouldn't block Flash-Lite
+        if _breaker_open(key):
+            errors.append(f"{model} circuit open / cooling down")
             continue
         cache_key = (
             _cache_key(model, system, prompt, json_mode, temperature) if ctx and ctx.llm_cache is not None else None
@@ -167,9 +168,9 @@ async def complete(
                     {**(span_attrs or {}), "attempt": attempt + 1, "model_kind": kind},
                     kind=kind,
                 )
-                _note(provider, True)
+                _note(key, True)
                 if has_fallback and time.monotonic() - t0 > s.slow_call_s:
-                    _cool_down(provider, f"slow call {time.monotonic() - t0:.1f} s")
+                    _cool_down(key, f"slow call {time.monotonic() - t0:.1f} s")
                 if cache_key:
                     ctx.llm_cache[cache_key] = res.__dict__  # type: ignore[union-attr]
                 return res
@@ -180,9 +181,9 @@ async def complete(
                     quota_hit = True
                     break  # daily cap: go straight to the fallback
                 if e.status != 429:
-                    _note(provider, False)  # rate limits are expected; only real failures trip the breaker
+                    _note(key, False)  # rate limits are expected; only real failures trip the breaker
                 if has_fallback and e.status in (0, 500, 502, 503, 504):
-                    _cool_down(provider, f"HTTP {e.status or 'timeout'}")
+                    _cool_down(key, f"HTTP {e.status or 'timeout'}")
                     break  # overloaded or stalled: the fallback answers now instead of a retry later
                 if not e.retryable or attempt == MAX_RETRIES:
                     break

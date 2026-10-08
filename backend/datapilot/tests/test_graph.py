@@ -633,3 +633,17 @@ async def test_live_high_confidence_answer_feeds_the_sql_cache(ask):
     again = await ask("chinook", ARTISTS)
     assert "c1-cache" in again.candidates()  # reused as one candidate, still executed and voted on
     assert again.candidates()["c1-cache"]["status"] == "ok"
+
+
+async def test_cooldown_is_per_model_not_per_provider(live_router, monkeypatch):
+    settings, log, _ = live_router
+    settings.gemini_api_key, settings.groq_api_key = "test-key-not-real", "test-key-not-real"
+    clock = iter([100.0, 100.0, 130.0])  # the Flash-Lite call "takes" 30 s
+    real = router.time.monotonic
+    monkeypatch.setattr(router.time, "monotonic", lambda: next(clock, None) or real())
+    await router.complete(_ctx(), "planner", "s", "p", kinds=["lite", "main", "fast"])
+    monkeypatch.setattr(router.time, "monotonic", real)
+    log.clear()
+    res = await router.complete(_ctx(), "planner", "s", "p", kinds=["lite", "main", "fast"])
+    assert res.model == settings.main_model  # Flash-Lite cools down, Gemini Flash still serves
+    assert log == [("gemini", settings.main_model)]
