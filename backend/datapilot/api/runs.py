@@ -83,10 +83,12 @@ def active_count() -> int:
     return sum(1 for h in _runs.values() if not h.done)
 
 
-async def start_run(*, thread_id: str, owner: str, db_id: str, question: str, history: list[dict]) -> RunHandle:
+async def start_run(
+    *, thread_id: str, owner: str, db_id: str, question: str, history: list[dict], database: Any = None
+) -> RunHandle:
     run_id = str(uuid.uuid4())
     profile = await active_profile()
-    ctx = RunCtx(run_id=run_id, db_id=db_id, user_id=owner, profile=profile)
+    ctx = RunCtx(run_id=run_id, db_id=db_id, user_id=owner, profile=profile, database=database)
     h = RunHandle(run_id, thread_id, owner, db_id, question, ctx)
     ctx.emit = h.emit
     _runs[run_id] = h

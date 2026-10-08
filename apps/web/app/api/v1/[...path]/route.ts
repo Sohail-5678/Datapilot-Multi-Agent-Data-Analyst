@@ -108,4 +108,4 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
   return new Response(upstream.status === 204 ? null : upstream.body, { status: upstream.status, headers: out });
 }
 
-export { proxy as GET, proxy as POST };
+export { proxy as DELETE, proxy as GET, proxy as POST };

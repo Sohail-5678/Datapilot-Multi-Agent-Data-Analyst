@@ -1,13 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { ArrowUp, ChevronRight, Database, Hash, KeyRound, Link2, Loader2, MessageSquarePlus, PanelLeft, Sparkles, Type, X } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowUp, ChevronRight, Database, Hash, KeyRound, Link2, Loader2, MessageSquarePlus, PanelLeft, Sparkles, Trash2, Type, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { UploadDialog } from "@/components/data/upload-dialog";
 import { TurnView } from "@/components/workspace/turn-view";
 import { api, ApiError } from "@/lib/api";
-import type { DatabaseInfo, SchemaInfo, ThreadInfo } from "@/lib/types";
+import { isUploadId, type DatabaseInfo, type DatabasesResponse, type SchemaInfo, type ThreadInfo } from "@/lib/types";
 import { useConversation } from "@/lib/use-conversation";
 import { cn, fmtInt, pad2, timeAgo } from "@/lib/utils";
 import { getSandbox } from "@/sandbox/runner";
@@ -82,17 +83,20 @@ function SchemaTree({ schema }: { schema: SchemaInfo | undefined }) {
   );
 }
 
-function Sidebar({ dbs, dbId, onPickDb, schema, onExample, threads, activeThread, onClose }: {
+function Sidebar({ dbs, uploaded, dbId, onPickDb, onUpload, onDelete, schema, onExample, threads, activeThread, onClose }: {
   dbs: DatabaseInfo[] | undefined;
+  uploaded: DatabaseInfo[];
   dbId: string;
   onPickDb: (id: string) => void;
+  onUpload: () => void;
+  onDelete: (id: string) => void;
   schema: SchemaInfo | undefined;
   onExample: (q: string) => void;
   threads: ThreadInfo[] | undefined;
   activeThread: string | null;
   onClose?: () => void;
 }) {
-  const db = dbs?.find((d) => d.db_id === dbId);
+  const db = [...uploaded, ...(dbs ?? [])].find((d) => d.db_id === dbId);
   return (
     <div className="flex h-full flex-col gap-7 overflow-y-auto scrollbar-thin p-5">
       {onClose && (
@@ -104,9 +108,19 @@ function Sidebar({ dbs, dbId, onPickDb, schema, onExample, threads, activeThread
         <label htmlFor="db-pick" className="label">Database</label>
         <div className="relative mt-2">
           <select id="db-pick" value={dbId} onChange={(e) => onPickDb(e.target.value)} className="input appearance-none !rounded-xl !py-2.5 pr-9 font-serif !text-lg font-semibold">
-            {(dbs ?? [{ db_id: dbId, title: dbId } as DatabaseInfo]).map((d) => (
-              <option key={d.db_id} value={d.db_id}>{d.title}</option>
-            ))}
+            {uploaded.length > 0 && (
+              <optgroup label="Your data">
+                {uploaded.map((d) => (
+                  <option key={d.db_id} value={d.db_id}>{d.title}</option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Demo databases">
+              {(dbs ?? [{ db_id: dbId, title: dbId } as DatabaseInfo]).map((d) => (
+                <option key={d.db_id} value={d.db_id}>{d.title}</option>
+              ))}
+            </optgroup>
+            {isUploadId(dbId) && !db && <option value={dbId}>Loading your dataset…</option>}
           </select>
           <Database className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
         </div>
@@ -114,8 +128,23 @@ function Sidebar({ dbs, dbId, onPickDb, schema, onExample, threads, activeThread
           <p className="mt-2 text-xs leading-relaxed text-muted">
             {db.subtitle} · {db.tables} tables · {fmtInt(db.rows)} rows ·{" "}
             <Link href={`/databases/${db.db_id}`} className="underline underline-offset-2 hover:text-ink">docs</Link>
+            {db.uploaded && db.expires_at && <> · kept until {new Date(db.expires_at).toLocaleDateString()}</>}
           </p>
         )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" onClick={onUpload} className="btn btn-ghost !px-3 !py-1.5 text-xs">
+            <Upload className="size-3.5" /> Upload your data
+          </button>
+          {db?.uploaded && (
+            <button
+              type="button"
+              onClick={() => window.confirm(`Delete “${db.title}”? This can't be undone.`) && onDelete(db.db_id)}
+              className="btn !px-3 !py-1.5 text-xs text-muted hover:bg-accent-soft hover:text-accent-ink"
+            >
+              <Trash2 className="size-3.5" /> Delete
+            </button>
+          )}
+        </div>
       </div>
       <div>
         <p className="label mb-2">Tables</p>
@@ -161,7 +190,11 @@ export function Workspace({ initialDb, initialQuestion, threadId }: { initialDb:
   const [drawer, setDrawer] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const askedInitial = useRef(false);
-  const dbs = useQuery({ queryKey: ["dbs"], queryFn: () => api<{ databases: DatabaseInfo[] }>("databases").then((r) => r.databases), retry: 2 });
+  const qc = useQueryClient();
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const catalog = useQuery({ queryKey: ["dbs"], queryFn: () => api<DatabasesResponse>("databases"), retry: 2 });
+  const dbs = { data: catalog.data?.databases };
+  const uploaded = useMemo(() => catalog.data?.uploaded ?? [], [catalog.data]);
   const schema = useQuery({ queryKey: ["schema", effectiveDb], queryFn: () => api<SchemaInfo>(`databases/${effectiveDb}/schema`) });
   const finished = conv.turns.filter((t) => t.phase === "done").length;
   const threads = useQuery({ queryKey: ["threads", conv.threadId, conv.turns.length, finished], queryFn: () => api<{ threads: ThreadInfo[] }>("threads").then((r) => r.threads) });
@@ -185,7 +218,7 @@ export function Workspace({ initialDb, initialQuestion, threadId }: { initialDb:
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [conv.turns.length]);
 
-  const db = useMemo(() => dbs.data?.find((d) => d.db_id === effectiveDb), [dbs.data, effectiveDb]);
+  const db = useMemo(() => [...uploaded, ...(catalog.data?.databases ?? [])].find((d) => d.db_id === effectiveDb), [catalog.data, uploaded, effectiveDb]);
   const submit = (q: string) => {
     if (!q.trim() || conv.busy) return;
     setDraft("");
@@ -197,8 +230,32 @@ export function Workspace({ initialDb, initialQuestion, threadId }: { initialDb:
     if (conv.threadId) router.push(`/app?db=${id}`);
     else setDbId(id);
   };
+  const onUploaded = async (ds: DatabaseInfo) => {
+    setUploadOpen(false);
+    await qc.invalidateQueries({ queryKey: ["dbs"] });
+    pickDb(ds.db_id);
+  };
+  const onDelete = async (id: string) => {
+    await api(`datasets/${id}`, { method: "DELETE" }).catch(() => {});
+    // The conversation belongs to the deleted dataset: start clean on a demo database. A soft navigation can
+    // land on the same component key ("chinook" is also the default) and keep the stale thread, so reload.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/app?db=chinook");
+  };
   const sidebar = (onClose?: () => void) => (
-    <Sidebar dbs={dbs.data} dbId={effectiveDb} onPickDb={pickDb} schema={schema.data} onExample={submit} threads={threads.data} activeThread={conv.threadId} onClose={onClose} />
+    <Sidebar
+      dbs={dbs.data}
+      uploaded={uploaded}
+      dbId={effectiveDb}
+      onPickDb={pickDb}
+      onUpload={() => setUploadOpen(true)}
+      onDelete={onDelete}
+      schema={schema.data}
+      onExample={submit}
+      threads={threads.data}
+      activeThread={conv.threadId}
+      onClose={onClose}
+    />
   );
 
   return (
@@ -213,6 +270,7 @@ export function Workspace({ initialDb, initialQuestion, threadId }: { initialDb:
         </div>
       )}
 
+      <UploadDialog open={uploadOpen} onClose={() => setUploadOpen(false)} onDone={onUploaded} />
       <main id="main" className="min-w-0 flex-1 px-4 pb-44 pt-6 sm:px-6 lg:px-2">
         <div className="mb-8 flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => setDrawer(true)} className="btn btn-ghost !px-3 !py-2 text-xs lg:hidden">
@@ -230,6 +288,15 @@ export function Workspace({ initialDb, initialQuestion, threadId }: { initialDb:
         </div>
         <WakingBanner />
 
+        {schema.isError && isUploadId(effectiveDb) && (
+          <div className="card mb-6 p-6" role="alert">
+            <p className="font-serif text-2xl">This dataset isn&apos;t available.</p>
+            <p className="mt-2 text-sm text-muted">Uploaded datasets are private and expire automatically. Upload it again to keep asking.</p>
+            <button type="button" className="btn btn-primary mt-4" onClick={() => setUploadOpen(true)}>
+              <Upload className="size-4" /> Upload data
+            </button>
+          </div>
+        )}
         {conv.loading ? (
           <div className="space-y-4">
             <div className="dp-shimmer h-10 w-2/3 rounded-xl" />
@@ -253,6 +320,11 @@ export function Workspace({ initialDb, initialQuestion, threadId }: { initialDb:
                 </button>
               ))}
             </div>
+            {!db?.uploaded && (
+              <button type="button" onClick={() => setUploadOpen(true)} className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-accent-ink underline-offset-4 hover:underline">
+                <Upload className="size-4" /> Or upload your own CSV, Excel, JSON or SQLite file
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-14">

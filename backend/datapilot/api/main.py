@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -31,6 +31,8 @@ from datapilot.index.value_index import build_value_index, index_stats
 from datapilot.sql.executor import execute_readonly
 from datapilot.sql.explain import estimate_cost
 from datapilot.sql.guard import guard_sql
+from datapilot.uploads import registry as uploads
+from datapilot.uploads.ingest import MAX_FILE_BYTES, IngestError
 
 log = logging.getLogger("datapilot")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -46,6 +48,7 @@ async def _warm() -> None:
     _ready["indexes"] = True
     log.info("indexes ready in %.1f s: %s", time.perf_counter() - t0, index_stats())
     await sql_cache.warm()
+    await uploads.purge_expired()
     removed = await persist.apply_retention()
     if removed:
         log.info("retention removed %d old runs", removed)
@@ -67,7 +70,7 @@ app.add_exception_handler(ApiError, api_error_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().origins,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Authorization", "Content-Type", "Last-Event-ID"],
 )
 
@@ -128,9 +131,21 @@ def _db_or_404(db_id: str):  # type: ignore[no-untyped-def]
     return db
 
 
+async def _resolve_db(db_id: str, p: Principal):  # type: ignore[no-untyped-def]
+    """A demo database, or one of the caller's own uploaded datasets (owner-checked; 404 otherwise)."""
+    if uploads.is_upload_id(db_id):
+        db = await uploads.get_dataset(db_id, p.user_id, p.is_admin)
+        if db is None:
+            raise ApiError(404, "not_found", "That dataset doesn't exist, has expired, or isn't yours.")
+        return db
+    return _db_or_404(db_id)
+
+
 @app.get("/v1/databases")
-async def databases(_p: Principal = Depends(current_principal)) -> dict:
+async def databases(p: Principal = Depends(current_principal)) -> dict:
+    mine = await uploads.list_datasets(p.user_id) if not p.sub.startswith("anon:") else []
     return {
+        "uploaded": mine,
         "databases": [
             {
                 "db_id": db.db_id,
@@ -146,7 +161,7 @@ async def databases(_p: Principal = Depends(current_principal)) -> dict:
                 "examples": db.examples,
             }
             for db in load_catalog().values()
-        ]
+        ],
     }
 
 
@@ -159,8 +174,8 @@ def _erd(db) -> str:  # type: ignore[no-untyped-def]
 
 
 @app.get("/v1/databases/{db_id}/schema")
-async def schema(db_id: str, _p: Principal = Depends(current_principal)) -> dict:
-    db = _db_or_404(db_id)
+async def schema(db_id: str, p: Principal = Depends(current_principal)) -> dict:
+    db = await _resolve_db(db_id, p)
     tables = []
     for t in db.tables.values():
         tables.append(
@@ -222,7 +237,7 @@ async def _own_thread(thread_id: str, p: Principal):  # type: ignore[no-untyped-
 
 @app.post("/v1/threads")
 async def new_thread(body: NewThread, p: Principal = Depends(current_principal)) -> dict:
-    _db_or_404(body.db_id)
+    await _resolve_db(body.db_id, p)
     return {"thread_id": await persist.create_thread(p.user_id, body.db_id)}
 
 
@@ -262,10 +277,16 @@ async def ask(thread_id: str, body: Ask, p: Principal = Depends(current_principa
             "quota_exhausted",
             "Free AI quota for today is used up; you can still browse benchmarks and past answers.",
         )
+    db = await _resolve_db(t.db_id, p)
     ratelimit.check_question(p.user_id, p.role)
     history = await persist.thread_history(thread_id)
     h = await start_run(
-        thread_id=thread_id, owner=p.user_id, db_id=t.db_id, question=body.question.strip(), history=history
+        thread_id=thread_id,
+        owner=p.user_id,
+        db_id=t.db_id,
+        question=body.question.strip(),
+        history=history,
+        database=db if uploads.is_upload_id(t.db_id) else None,
     )
     return _sse_response(stream(h, 0))
 
@@ -362,7 +383,7 @@ class UserSql(BaseModel):
 @app.post("/v1/sql/execute")
 async def user_sql(body: UserSql, p: Principal = Depends(current_principal)) -> dict:
     """User-edited SQL goes through the same guard and runs read-only (SPEC §2.4 'Edit SQL')."""
-    db = _db_or_404(body.db_id)
+    db = await _resolve_db(body.db_id, p)
     s = get_settings()
     g = guard_sql(body.sql, db.table_names, {n: t.row_count for n, t in db.tables.items()})
     if not g.ok:
@@ -424,6 +445,51 @@ async def run_detail(run_id: str, p: Principal = Depends(current_principal)) -> 
         raise ApiError(404, "not_found", "Run not found.")
     h = get_handle(run_id)
     return {**run, "live": bool(h and not h.done)}
+
+
+# ---------------------------------------------------------------- "Your data" (uploads)
+
+
+@app.post("/v1/datasets")
+async def upload_dataset(
+    files: list[UploadFile] = File(...),
+    title: str = Form(default=""),
+    consent: bool = Form(default=False),
+    p: Principal = Depends(current_principal),
+) -> dict:
+    """Upload CSV / TSV / Excel / JSON / SQLite files → one private, read-only dataset."""
+    if p.sub.startswith("anon:"):
+        raise ApiError(401, "unauthorized", "Sign in (or try as a guest) to upload data.")
+    if not consent:
+        raise ApiError(422, "consent_required", "Please confirm the data may be sent to the free AI providers.")
+    if len(files) > 10:
+        raise ApiError(422, "too_many_files", "Upload at most 10 files at a time.")
+    blobs: list[tuple[str, bytes]] = []
+    for f in files:
+        data = await f.read(MAX_FILE_BYTES + 1)
+        name = (f.filename or "upload").replace("/", "_").replace("\\", "_")[-200:]
+        if len(data) > MAX_FILE_BYTES:
+            raise ApiError(413, "file_too_large", f"{name}: larger than {MAX_FILE_BYTES // (1024 * 1024)} MB.")
+        blobs.append((name, data))
+    try:
+        ds = await uploads.create_dataset(p.user_id, p.role, title, blobs)
+    except IngestError as e:
+        raise ApiError(422, "bad_upload", str(e)) from e
+    await persist.audit(p.user_id, "upload_dataset", ds["db_id"], {"files": ds["files"], "rows": ds["rows"]})
+    return ds
+
+
+@app.get("/v1/datasets")
+async def my_datasets(p: Principal = Depends(current_principal)) -> dict:
+    return {"datasets": await uploads.list_datasets(p.user_id)}
+
+
+@app.delete("/v1/datasets/{db_id}")
+async def delete_dataset(db_id: str, p: Principal = Depends(current_principal)) -> dict:
+    if not await uploads.delete_dataset(db_id, p.user_id, p.is_admin):
+        raise ApiError(404, "not_found", "Dataset not found.")
+    await persist.audit(p.user_id, "delete_dataset", db_id)
+    return {"ok": True}
 
 
 @app.get("/v1/benchmarks")

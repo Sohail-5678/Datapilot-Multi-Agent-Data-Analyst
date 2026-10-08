@@ -96,6 +96,13 @@ async def current_principal(request: Request, authorization: str | None = Header
     role = claims.get("role")
     if role not in ROLES:
         raise ApiError(403, "forbidden", "Unknown role.")
+    # Upload tokens go to the browser (files are posted straight to the API, past Vercel's 4.5 MB body limit),
+    # so they are scoped to that one route.
+    scope = claims.get("scope")
+    if scope is not None and not (
+        scope == "upload" and request.method == "POST" and request.url.path == "/v1/datasets"
+    ):
+        raise ApiError(403, "forbidden", "This token can only upload datasets.")
     p = Principal(sub=str(claims["sub"]), role=role, name=str(claims.get("name") or "Guest"), login=claims.get("login"))
     p.user_id = await _user_id(p)
     request.state.principal = p

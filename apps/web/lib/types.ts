@@ -12,7 +12,22 @@ export interface DatabaseInfo {
   source_url: string;
   license: string;
   examples: string[];
+  /** "Your data" datasets only */
+  uploaded?: boolean;
+  files?: { name: string; bytes: number }[];
+  table_details?: { name: string; original: string; source: string; rows: number; truncated: boolean; columns: { name: string; original: string; type: string; pii: boolean }[] }[];
+  pii_columns?: string[];
+  truncated?: string[];
+  expires_at?: string | null;
+  created_at?: string | null;
 }
+
+export interface DatabasesResponse {
+  databases: DatabaseInfo[];
+  uploaded?: DatabaseInfo[];
+}
+
+export const isUploadId = (id: string) => /^u_[0-9a-f]{10}$/.test(id);
 
 export interface ColumnInfo {
   name: string;

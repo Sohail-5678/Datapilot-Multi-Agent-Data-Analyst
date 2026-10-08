@@ -1,0 +1,6 @@
+Order ID,Order Date,Region,Product,Amount
+1001,2024-01-05,West,Pens,"$1,234.50"
+1002,2024-01-07,East,Books,$99.99
+1003,2024-02-11,West,Paper,$450.00
+1004,2024-02-20,North,Pens,$310.25
+1005,2024-03-02,East,Books,$75.00

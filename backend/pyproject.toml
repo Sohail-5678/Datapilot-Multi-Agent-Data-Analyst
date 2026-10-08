@@ -10,10 +10,12 @@ dependencies = [
     "jsonschema>=4.26.0",
     "langgraph>=1.2.14",
     "networkx>=3.7",
+    "openpyxl>=3.1.5",
     "psycopg[binary,pool]>=3.3.6",
     "pydantic>=2.14.0",
     "pydantic-settings>=2.15.0",
     "pyjwt[crypto]>=2.15.1",
+    "python-multipart>=0.0.32",
     "rapidfuzz>=3.14.6",
     "sqlalchemy>=2.0",
     "sqlglot>=30.21.0",
@@ -43,7 +45,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]
 ignore = ["E501", "UP047"]
 
 [tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", "fastapi.File", "fastapi.Form"]
 
 [tool.mypy]
 python_version = "3.12"

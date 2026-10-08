@@ -20,6 +20,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     MetaData,
     Numeric,
     SmallInteger,
@@ -193,6 +194,25 @@ audit_log = Table(
     Column("target", String(200)),
     Column("details", JSON),
     Column("created_at", DateTime(timezone=True), default=_now),
+)
+
+# "Your data": user-uploaded datasets. The built SQLite file is stored zlib-compressed so it survives the free
+# instance's ephemeral disk; it is unpacked to a local read-only file on first use.
+user_datasets = Table(
+    "user_datasets",
+    metadata,
+    Column("id", String(36), primary_key=True, default=_uuid),
+    Column("db_id", String(40), unique=True, index=True),
+    Column("user_id", String(36), index=True),
+    Column("title", Text),
+    Column("description", Text),
+    Column("files", JSON),
+    Column("tables", JSON),
+    Column("examples", JSON),
+    Column("size_bytes", Integer),
+    Column("blob", LargeBinary),
+    Column("created_at", DateTime(timezone=True), default=_now),
+    Column("expires_at", DateTime(timezone=True), index=True),
 )
 
 Index("ix_sql_cache_db_q", sql_cache.c.db_id, sql_cache.c.question_norm)

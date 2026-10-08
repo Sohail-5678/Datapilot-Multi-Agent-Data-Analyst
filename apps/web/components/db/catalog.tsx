@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
-import type { DatabaseInfo } from "@/lib/types";
+import type { DatabasesResponse } from "@/lib/types";
 import { cn, fmtInt, pad2 } from "@/lib/utils";
 
 const TONES = [
@@ -18,7 +18,9 @@ const TONES = [
 export function useDatabases() {
   return useQuery({
     queryKey: ["dbs"],
-    queryFn: () => api<{ databases: DatabaseInfo[] }>("databases").then((r) => r.databases),
+    // Same cache entry as the workspace and "Your data" (full response); this view selects the demo list.
+    queryFn: () => api<DatabasesResponse>("databases"),
+    select: (r: DatabasesResponse) => r.databases,
     retry: (n, e) => (e instanceof ApiError && e.code === "backend_starting" ? n < 20 : n < 1),
     retryDelay: 3000,
   });

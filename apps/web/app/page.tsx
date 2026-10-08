@@ -167,6 +167,13 @@ export default async function Landing() {
             <ExampleCard key={e.n} e={e} i={i} signedIn={Boolean(user)} />
           ))}
         </div>
+        <p className="mt-16 text-center text-sm text-muted lg:mt-20">
+          Have your own spreadsheet?{" "}
+          <Link href={user ? "/databases#your-data" : "/login?next=/databases"} className="link-underline font-semibold text-ink">
+            Upload a CSV, Excel, JSON or SQLite file
+          </Link>{" "}
+          and ask it anything — private to you, deleted automatically.
+        </p>
       </section>
 
       <section className="relative z-10 mx-auto mt-32 max-w-[1440px] px-4 sm:px-8" aria-labelledby="crew">

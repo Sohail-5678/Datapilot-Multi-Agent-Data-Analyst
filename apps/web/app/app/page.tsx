@@ -8,7 +8,7 @@ const DBS = ["chinook", "superhero", "student_club", "formula_1", "european_foot
 
 export default async function WorkspacePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const db = typeof sp.db === "string" && DBS.includes(sp.db) ? sp.db : "chinook";
+  const db = typeof sp.db === "string" && (DBS.includes(sp.db) || /^u_[0-9a-f]{10}$/.test(sp.db)) ? sp.db : "chinook";
   const q = typeof sp.q === "string" ? sp.q.slice(0, 1000) : null;
   return (
     <>

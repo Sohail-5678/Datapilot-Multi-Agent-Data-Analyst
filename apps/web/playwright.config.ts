@@ -31,6 +31,8 @@ export default defineConfig({
         DATABASE_URL: "sqlite:///./.devdata/e2e.db",
         JWT_PUBLIC_KEY: process.env.E2E_JWT_PUBLIC_KEY ?? "",
         RATE_LIMITS_JSON: '{"guest": [1000, 1000], "user": [1000, 1000], "admin": [1000, 1000]}',
+        ALLOWED_ORIGINS: `http://localhost:${WEB_PORT}`,
+        UPLOAD_CACHE_DIR: "./.devdata/e2e-uploads",
       },
     },
     {

@@ -10,6 +10,8 @@ export interface BackendClaims {
   role: "guest" | "user" | "admin";
   name: string;
   login?: string | null;
+  /** "upload": a token handed to the browser for one direct file upload to the API (scoped server-side). */
+  scope?: "upload";
 }
 
 let cached: { raw: string; key: Promise<CryptoKey> } | null = null;
@@ -28,8 +30,8 @@ export async function mintBackendToken(
   privateKey: string = process.env.JWT_PRIVATE_KEY ?? "",
 ): Promise<string> {
   const key = await signingKey(privateKey);
-  const { sub, login, ...rest } = claims;
-  return new SignJWT({ ...rest, ...(login ? { login } : {}) })
+  const { sub, login, scope, ...rest } = claims;
+  return new SignJWT({ ...rest, ...(login ? { login } : {}), ...(scope ? { scope } : {}) })
     .setProtectedHeader({ alg: "ES256", typ: "JWT" })
     .setIssuer("datapilot-web")
     .setAudience("datapilot-api")

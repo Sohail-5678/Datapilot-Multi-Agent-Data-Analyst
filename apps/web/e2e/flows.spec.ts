@@ -68,3 +68,24 @@ test("benchmarks and databases pages are accessible", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Chinook", level: 1 })).toBeVisible();
   await axe(page);
 });
+
+test("upload your own data → ask about it → delete", async ({ page }) => {
+  await guest(page, "/app");
+  await page.getByRole("button", { name: "Upload your data" }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('input[type="file"]').setInputFiles("e2e/fixtures/sales.csv");
+  await expect(dialog.getByRole("button", { name: "Upload & analyze" })).toBeDisabled(); // consent required
+  await dialog.getByRole("checkbox").check();
+  await dialog.getByRole("button", { name: "Upload & analyze" }).click();
+  await expect(dialog.getByText("Ready")).toBeVisible();
+  await expect(dialog).toContainText("amount");
+  await axe(page);
+  await dialog.getByRole("button", { name: "Start asking" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("sales");
+  await page.getByLabel("Ask a question about this database").fill("How many orders are there?");
+  await page.getByRole("button", { name: "Ask" }).click();
+  await expect(page.getByText("Numbers checked against results")).toBeVisible();
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Delete" }).first().click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Chinook");
+});

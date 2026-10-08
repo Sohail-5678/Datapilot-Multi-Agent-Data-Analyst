@@ -33,6 +33,16 @@ Ask a business question in plain English. A team of agents plans it, links it to
 5. Open **Trace** on any answer for the span waterfall (planner → linker → candidates → guard → executor → verifier → chart → narrator → grounding), with models, tokens and list-price cost.
 6. **Benchmarks** → the ablation table, the accuracy-vs-cost chart and the failed cases, with gold vs predicted SQL.
 
+### Bring your own data
+
+Signed-in visitors (guests included) can upload **CSV, TSV, Excel (.xlsx — every sheet becomes a table), JSON or SQLite** files — up to 10 MB each, 25 MB per dataset, several files per dataset so they can be joined — and ask questions about them with exactly the same agents, guards, charts and number checks.
+
+- **Ingestion** infers column types (integers, decimals, `$1,234.50` money, `12%` percents, mixed date formats → ISO), rebuilds every identifier as safe snake_case, and builds one read-only SQLite database. Uploaded SQLite files are opened read-only with `trusted_schema=OFF`; only tables are copied (no views or triggers).
+- **Privacy:** uploads require explicit consent (free-tier providers may use prompts to improve their models); columns that look personal (emails, phones, names, addresses, IDs) are detected, masked in samples and kept out of prompts and value links; datasets are private to their owner and deleted automatically (guests 1 day, GitHub users 7 days).
+- **Durable on free hosting:** the built database is stored zlib-compressed in Postgres and unpacked to a read-only local cache on demand, because Render's disk is wiped when the free instance sleeps.
+- **Uploads skip the 4.5 MB serverless body limit:** the web app mints a 5-minute token scoped to `POST /v1/datasets` only, and the browser uploads straight to the API.
+- Example questions for each dataset are suggested by Flash-Lite from its schema (rule-based fallback).
+
 ---
 
 ## Architecture
@@ -112,11 +122,12 @@ uv run python -m datapilot.bench --summarize && pnpm --dir ../apps/web sync:benc
 | Agent graph (fake LLM) | clarify, confirm run/cancel/narrow, repair, vote tie, adaptive k, budget stop, provider fallback, circuit breaker, sandbox + timeout, trace.v1 shape |
 | API | auth matrix, owner checks, SSE format, checkpoints over HTTP, rate limits |
 | Sandbox | network blocked, `js`/`micropip`/`open()` blocked, infinite loop killed, big data refused (Node runner) |
-| Web | Vitest (SSE parser, turn reducer, chart-spec whitelist, safe rich text) + Playwright e2e on the real stack with axe checks: ask → answer → chart → SQL; clarify → confirm; cancel; Python in the browser sandbox |
+| Web | Vitest (SSE parser, turn reducer, chart-spec whitelist, safe rich text) + Playwright e2e on the real stack with axe checks: ask → answer → chart → SQL; clarify → confirm; cancel; Python in the browser sandbox; upload a CSV → ask → delete |
+| Uploads | type inference (money, percents, dates), hostile identifiers, size/row limits, xlsx/JSON/SQLite parsing (views and triggers dropped), PII tagging; owner-only access, consent, guest limits, expiry, survival of a wiped disk, upload-scoped tokens |
 | Evals | `python -m datapilot.eval_adapter run --cases ../evals/cases/smoke.jsonl …` — 10 case.v1 cases incl. data-borne injection, a canary table and SQL injection on fresh DB copies |
 
 ```bash
-cd backend && uv run pytest -q                 # 458 tests, ~7 s, never calls a provider
+cd backend && uv run pytest -q                 # 482 tests, ~7 s, never calls a provider
 cd sandbox && npm ci && npm test               # Pyodide lockdown
 cd apps/web && pnpm test && pnpm e2e           # unit + Playwright/axe
 ```
