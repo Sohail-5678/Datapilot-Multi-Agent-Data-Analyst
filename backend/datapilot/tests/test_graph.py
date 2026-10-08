@@ -638,7 +638,7 @@ async def test_live_high_confidence_answer_feeds_the_sql_cache(ask):
 async def test_cooldown_is_per_model_not_per_provider(live_router, monkeypatch):
     settings, log, _ = live_router
     settings.gemini_api_key, settings.groq_api_key = "test-key-not-real", "test-key-not-real"
-    clock = iter([100.0, 100.0, 130.0])  # the Flash-Lite call "takes" 30 s
+    clock = iter([100.0, 130.0])  # the Flash-Lite call "takes" 30 s (t0, then the post-call check)
     real = router.time.monotonic
     monkeypatch.setattr(router.time, "monotonic", lambda: next(clock, None) or real())
     await router.complete(_ctx(), "planner", "s", "p", kinds=["lite", "main", "fast"])
