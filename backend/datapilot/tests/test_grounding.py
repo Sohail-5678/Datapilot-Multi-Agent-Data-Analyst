@@ -63,8 +63,8 @@ def test_matching_is_at_the_written_precision():
     assert not check_grounding("Total: 13,400.", one).ok  # wrong at its own precision
     four = Allowed(allowed_values([{"columns": ["v"], "rows": [[4000.0]], "row_count": 1}]))
     assert not check_grounding("It is 4019.", four).ok  # not a rounding of 4000
-    # two rows, so 100 isn't derivable as a 100% share of a single value
-    small = Allowed(allowed_values([{"columns": ["v"], "rows": [[147.0], [52.0]], "row_count": 2}]))
+    # nothing derivable from 147 and 31 (sum, mean, shares, changes) rounds to 100
+    small = Allowed(allowed_values([{"columns": ["v"], "rows": [[147.0], [31.0]], "row_count": 2}]))
     assert not check_grounding("About 100 tracks.", small).ok  # 1 significant digit is not an honest rounding
 
 
