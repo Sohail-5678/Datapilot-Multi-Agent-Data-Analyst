@@ -49,14 +49,29 @@ ACCEPTED = [
     pytest.param("The average genre made 191.83 in 2012.", id="column_mean"),
     pytest.param("Rock alone is 69.5% of 2012 revenue.", id="share_of_total"),
     pytest.param("The top 3 genres are Rock, Latin and Metal.", id="row_count"),
-    pytest.param("Rock leads with 401.9.", id="within_half_percent"),
+    pytest.param("Rock leads with about 400.", id="exact_integer"),
 ]
 
 
-def test_tolerance_is_half_a_percent():
-    one = Allowed(allowed_values([{"columns": ["v"], "rows": [[4000.0]], "row_count": 1}]))
-    assert check_grounding("It is 4019.", one).ok  # 0.475 % off
-    assert not check_grounding("It is 4030.", one).ok  # 0.75 % off
+def test_matching_is_at_the_written_precision():
+    one = Allowed(allowed_values([{"columns": ["total"], "rows": [[13469.75]], "row_count": 1}]))
+    assert check_grounding("Total: $13,469.75.", one).ok
+    assert not check_grounding("Total: $13,469.80.", one).ok  # a "rounding" that changes the cents (seen in production)
+    assert check_grounding("Total: about $13,470.", one).ok  # rounded to whole dollars
+    assert check_grounding("Total: $13.5K.", one).ok  # rounded to hundreds via the K suffix
+    assert check_grounding("Total: roughly 13,000.", one).ok  # rounded to thousands, 2 significant digits kept
+    assert not check_grounding("Total: 13,400.", one).ok  # wrong at its own precision
+    four = Allowed(allowed_values([{"columns": ["v"], "rows": [[4000.0]], "row_count": 1}]))
+    assert not check_grounding("It is 4019.", four).ok  # not a rounding of 4000
+    # two rows, so 100 isn't derivable as a 100% share of a single value
+    small = Allowed(allowed_values([{"columns": ["v"], "rows": [[147.0], [52.0]], "row_count": 2}]))
+    assert not check_grounding("About 100 tracks.", small).ok  # 1 significant digit is not an honest rounding
+
+
+def test_numbers_in_column_names_are_context():
+    res = [{"columns": ["genre", "revenue_2011", "top_10_share"], "rows": [["Rock", 5.0, 0.4]], "row_count": 1}]
+    a = Allowed(allowed_values(res, None, "q"))
+    assert check_grounding("Rock made $5 in 2011, 40% of the top 10.", a).ok
 
 
 @pytest.mark.parametrize("text", ACCEPTED)
@@ -69,6 +84,7 @@ REJECTED = [
     pytest.param("Rock earned $999 in 2012.", "$999", id="invented_value"),
     pytest.param("Rock grew 85% from 2011.", "85%", id="invented_percent"),
     pytest.param("Rock leads with 466.", "466", id="invented_near_value"),
+    pytest.param("Rock leads with 401.9.", "401.9", id="near_but_wrong_at_its_precision"),
     pytest.param("There are 31,337 genres.", "31,337", id="invented_count"),
     pytest.param("Rock made 2.5 million.", "2.5 million", id="invented_scaled"),
 ]
