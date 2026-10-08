@@ -25,11 +25,19 @@ def check_question(user_key: str, role: str) -> dict:
     last_hour = sum(1 for t in q if t > now - 3600)
     if last_hour >= per_hour:
         oldest = next(t for t in q if t > now - 3600)
-        raise ApiError(429, "rate_limited", f"You've asked {per_hour} questions in the last hour. Try again soon.",
-                       {"retry_after": int(oldest + 3600 - now) + 1})
+        raise ApiError(
+            429,
+            "rate_limited",
+            f"You've asked {per_hour} questions in the last hour. Try again soon.",
+            {"retry_after": int(oldest + 3600 - now) + 1},
+        )
     if len(q) >= per_day:
-        raise ApiError(429, "rate_limited", f"Daily limit of {per_day} questions reached for this account.",
-                       {"retry_after": int(q[0] + 86_400 - now) + 1})
+        raise ApiError(
+            429,
+            "rate_limited",
+            f"Daily limit of {per_day} questions reached for this account.",
+            {"retry_after": int(q[0] + 86_400 - now) + 1},
+        )
     q.append(now)
     return {"hour_left": per_hour - last_hour - 1, "day_left": per_day - len(q)}
 

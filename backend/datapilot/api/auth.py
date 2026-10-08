@@ -13,6 +13,7 @@ from typing import Any
 import jwt
 from fastapi import Header, Request
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from datapilot.api.errors import ApiError
 from datapilot.config import get_settings
@@ -77,7 +78,11 @@ async def _user_id(p: Principal) -> str:
         )
         return res.inserted_primary_key[0]
 
-    uid = str(await run_db(upsert))
+    try:
+        uid = str(await run_db(upsert))
+    except IntegrityError:
+        # Two first requests from a new browser raced to insert the same user: the other one won, read it back.
+        uid = str(await run_db(upsert))
     if len(_user_cache) > 5000:
         _user_cache.clear()
     _user_cache[p.sub] = (time.monotonic() + 600, uid)

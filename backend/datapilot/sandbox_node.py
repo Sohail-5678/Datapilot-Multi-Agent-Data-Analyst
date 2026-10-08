@@ -21,9 +21,15 @@ def node_available() -> bool:
 async def run_in_node(code: str, data: dict, timeout_ms: int = 10_000) -> dict:
     if not node_available():
         return {"ok": False, "error": "Node Pyodide runner not installed (cd sandbox && npm ci).", "ran_in": "node"}
-    payload = json.dumps({"code": code, "data": {"columns": data["columns"], "rows": data["rows"]}, "timeout_ms": timeout_ms})
+    payload = json.dumps(
+        {"code": code, "data": {"columns": data["columns"], "rows": data["rows"]}, "timeout_ms": timeout_ms}
+    )
     proc = await asyncio.create_subprocess_exec(
-        "node", str(RUNNER), stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        "node",
+        str(RUNNER),
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
     )
     try:
         out, err = await asyncio.wait_for(proc.communicate(payload.encode()), timeout=timeout_ms / 1000 + 90)

@@ -19,6 +19,7 @@ backend/.devdata/
 .cache/
 bench/.llm_cache/
 bench/.bird/
+bench/.state/
 # node
 node_modules/
 .next/
@@ -30,3 +31,4 @@ test-results/
 playwright-report/
 # os
 .DS_Store
+.claude/

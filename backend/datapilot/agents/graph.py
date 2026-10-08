@@ -10,6 +10,7 @@ Any stop (budget, quota, cancel) jumps to the narrator with what is verified so 
 
 from __future__ import annotations
 
+import contextlib
 from functools import lru_cache
 
 from langchain_core.runnables import RunnableConfig
@@ -65,11 +66,19 @@ def route_verify(state: DPState) -> str:
 async def advance(state: DPState, config: RunnableConfig) -> dict:
     ctx = ctx_of(config)
     idx = state.get("step_idx", 0) + 1
-    ctx.send("step", {"node": "advance", "status": "done", "label": f"Step {idx} of {len(state.get('plan') or [])} done", "step_idx": idx - 1})
+    ctx.send(
+        "step",
+        {
+            "node": "advance",
+            "status": "done",
+            "label": f"Step {idx} of {len(state.get('plan') or [])} done",
+            "step_idx": idx - 1,
+        },
+    )
     return {"step_idx": idx, "candidates": RESET, "analysis_attempts": 0, "confirmed": False}
 
 
-def route_advance(state: DPState) -> str:
+def route_advance(state: DPState, config: RunnableConfig) -> str:
     if s := _stopped(state):
         return s
     plan = state.get("plan") or []
@@ -81,6 +90,10 @@ def route_advance(state: DPState) -> str:
         if step.get("needs_analysis"):
             return "analyst"
         return "advance"
+    # Benchmark hook (datapilot.bench): `sql_only` ends the run after the last step's verify, so chart and
+    # narrator calls are neither made nor counted toward benchmark cost. Off everywhere else.
+    if ctx_of(config).flags.get("sql_only"):
+        return "respond"
     return "chart"
 
 
@@ -131,7 +144,9 @@ def build_graph() -> StateGraph:
     g.add_conditional_edges("verify", route_verify, ["analyst", "advance", "narrator", "respond"])
     g.add_conditional_edges("analyst", route_analysis, ["sandbox_call", "analyst", "advance", "narrator", "respond"])
     g.add_conditional_edges("sandbox_call", route_analysis, ["analyst", "advance", "narrator", "respond"])
-    g.add_conditional_edges("advance", route_advance, ["schema_linker", "analyst", "advance", "chart", "narrator", "respond"])
+    g.add_conditional_edges(
+        "advance", route_advance, ["schema_linker", "analyst", "advance", "chart", "narrator", "respond"]
+    )
     g.add_edge("chart", "narrator")
     g.add_edge("narrator", "output_guard")
     g.add_edge("output_guard", "respond")
@@ -150,7 +165,5 @@ def compiled_graph():  # type: ignore[no-untyped-def]
 
 
 def forget_run(run_id: str) -> None:
-    try:
+    with contextlib.suppress(Exception):
         _saver.delete_thread(run_id)
-    except Exception:  # noqa: BLE001
-        pass

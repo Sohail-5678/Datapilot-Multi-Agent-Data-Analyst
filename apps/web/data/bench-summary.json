@@ -1,0 +1,15 @@
+{
+ "schema": "datapilot.bench-summary.v1",
+ "generated_at": "2026-10-08T20:51:28Z",
+ "benchmark": "BIRD Mini-Dev (SQLite), fixed stratified 150-question subset (seed 13; train/val/test 50 each)",
+ "metric": "EX — execution accuracy, BIRD official set comparison of predicted vs gold result rows",
+ "cost_note": "list_price_cost_usd = tokens × published paid list price; actual spend is $0 (free tiers)",
+ "inclusion_rule": "latest real (non-fake) run per config on subset_150 with n ≥ 20; test split preferred",
+ "preview": true,
+ "configs": {},
+ "ablation": [],
+ "per_difficulty": {},
+ "per_db": {},
+ "failed_cases": [],
+ "note": "No qualifying benchmark run has been recorded yet."
+}

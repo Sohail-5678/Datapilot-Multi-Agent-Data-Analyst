@@ -33,7 +33,9 @@ async def warm() -> None:
 
     def load(conn):  # type: ignore[no-untyped-def]
         return conn.execute(
-            select(sql_cache.c.db_id, sql_cache.c.question_norm, sql_cache.c.sql).order_by(sql_cache.c.created_at.desc()).limit(500)
+            select(sql_cache.c.db_id, sql_cache.c.question_norm, sql_cache.c.sql)
+            .order_by(sql_cache.c.created_at.desc())
+            .limit(500)
         ).all()
 
     try:
@@ -94,12 +96,19 @@ async def store(db_id: str, question: str, sql: str, result_hash: str, source: s
         ).first()
         if exists:
             conn.execute(
-                sql_cache.update().where(sql_cache.c.id == exists.id).values(sql=sql, result_hash=result_hash, source=source)
+                sql_cache.update()
+                .where(sql_cache.c.id == exists.id)
+                .values(sql=sql, result_hash=result_hash, source=source)
             )
         else:
             conn.execute(
                 sql_cache.insert().values(
-                    db_id=db_id, question_norm=qn, embedding=vec, sql=sql, result_hash=result_hash, source=source,
+                    db_id=db_id,
+                    question_norm=qn,
+                    embedding=vec,
+                    sql=sql,
+                    result_hash=result_hash,
+                    source=source,
                     profile_version=profile_version,
                 )
             )

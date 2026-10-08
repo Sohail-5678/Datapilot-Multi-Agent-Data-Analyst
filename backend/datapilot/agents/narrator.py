@@ -12,7 +12,13 @@ import json
 from langchain_core.runnables import RunnableConfig
 
 from datapilot.agents.state import DPState, ctx_of, database_for, rows_for_prompt, tag
-from datapilot.guards.output_grounding import Allowed, allowed_values, check_grounding, extract_numbers, strip_ungrounded
+from datapilot.guards.output_grounding import (
+    Allowed,
+    allowed_values,
+    check_grounding,
+    extract_numbers,
+    strip_ungrounded,
+)
 from datapilot.llm.router import LLMUnavailable, complete
 from datapilot.tracing import BudgetExceeded
 
@@ -31,7 +37,9 @@ def _results_block(db, state: DPState) -> str:  # type: ignore[no-untyped-def]
             parts.append(f"Step {r['step_idx'] + 1} ({r['goal']}): no result — {'; '.join(r.get('reasons') or [])}")
             continue
         note = f" (showing 30 of {r['row_count']})" if r["row_count"] > 30 else ""
-        parts.append(f"Step {r['step_idx'] + 1}: {r['goal']} — {r['row_count']} rows{note}\n{rows_for_prompt(db, r['columns'], r['rows'], 30)}")
+        parts.append(
+            f"Step {r['step_idx'] + 1}: {r['goal']} — {r['row_count']} rows{note}\n{rows_for_prompt(db, r['columns'], r['rows'], 30)}"
+        )
     return "\n\n".join(parts)
 
 
@@ -61,12 +69,19 @@ async def narrator(state: DPState, config: RunnableConfig) -> dict:
         return {}
     stop = state.get("stop")
     if not any(r.get("ok") for r in state.get("step_results") or []):
-        return {"answer": STOP_MESSAGES.get(stop or "", _fallback_answer(state)), "grounding": {"checked": 0, "removed": [], "ok": True}}
+        return {
+            "answer": STOP_MESSAGES.get(stop or "", _fallback_answer(state)),
+            "grounding": {"checked": 0, "removed": [], "ok": True},
+        }
     ctx.send("step", {"node": "narrator", "status": "running", "label": "Writing the answer…"})
     prompt = "\n\n".join(
         x
         for x in (
-            tag("question", state["question"] + (f"\nThe user clarified: {state['clarification']}" if state.get("clarification") else "")),
+            tag(
+                "question",
+                state["question"]
+                + (f"\nThe user clarified: {state['clarification']}" if state.get("clarification") else ""),
+            ),
             tag("rows", _results_block(db, state)),
             _analysis_block(state),
         )
@@ -74,28 +89,57 @@ async def narrator(state: DPState, config: RunnableConfig) -> dict:
     )
     with ctx.span("node", "narrator") as sp:
         try:
-            res = await complete(ctx, "narrator", ctx.profile.prompts["narrator"], prompt, kinds=["main", "fast"], temperature=0.2, max_tokens=500)
+            res = await complete(
+                ctx,
+                "narrator",
+                ctx.profile.prompts["narrator"],
+                prompt,
+                kinds=["main", "fast"],
+                temperature=0.2,
+                max_tokens=500,
+            )
             draft = res.text.strip()
         except (BudgetExceeded, LLMUnavailable) as e:
             draft = _fallback_answer(state)
             sp.attributes["fallback"] = type(e).__name__
+            if isinstance(e, BudgetExceeded) and not stop:
+                stop = "budget_exceeded"
         ctx.set_io(sp, None, {"chars": len(draft)})
-    return {"answer": draft, "notes": [*(state.get("notes") or []), *( [STOP_MESSAGES[stop]] if stop in STOP_MESSAGES else [])]}
+    update: dict = {
+        "answer": draft,
+        "notes": [*(state.get("notes") or []), *([STOP_MESSAGES[stop]] if stop in STOP_MESSAGES else [])],
+    }
+    if stop and not state.get("stop"):
+        update["stop"] = stop
+    return update
 
 
 async def output_guard(state: DPState, config: RunnableConfig) -> dict:
     ctx = ctx_of(config)
     db = database_for(ctx)
     answer = state.get("answer") or ""
-    results = [{"columns": r["columns"], "rows": r["rows"], "row_count": r["row_count"]} for r in state.get("step_results") or [] if r.get("ok")]
+    results = [
+        {"columns": r["columns"], "rows": r["rows"], "row_count": r["row_count"]}
+        for r in state.get("step_results") or []
+        if r.get("ok")
+    ]
     analysis = (state.get("analysis") or {}).get("result")
     rewritten = False
     with ctx.span("guard", "output_guard") as sp:
-        allowed = Allowed(allowed_values(results, analysis, state["question"] + " " + (state.get("clarification") or "")))
+        allowed = Allowed(
+            allowed_values(results, analysis, state["question"] + " " + (state.get("clarification") or ""))
+        )
         res = check_grounding(answer, allowed)
         removed: list[str] = []
         if not res.ok and ctx.flags.get("grounding_rewrite", True):
-            base = sorted({abs(m.value) for r in results for row in r["rows"][:30] for m in extract_numbers(json.dumps(row, default=str))})[:80]
+            base = sorted(
+                {
+                    abs(m.value)
+                    for r in results
+                    for row in r["rows"][:30]
+                    for m in extract_numbers(json.dumps(row, default=str))
+                }
+            )[:80]
             prompt = "\n\n".join(
                 [
                     tag("question", state["question"]),
@@ -107,7 +151,9 @@ async def output_guard(state: DPState, config: RunnableConfig) -> dict:
                 ]
             )
             try:
-                fixed = await complete(ctx, "narrator", ctx.profile.prompts["narrator"], prompt, kinds=["main", "fast"], max_tokens=500)
+                fixed = await complete(
+                    ctx, "narrator", ctx.profile.prompts["narrator"], prompt, kinds=["main", "fast"], max_tokens=500
+                )
                 answer, rewritten = fixed.text.strip(), True
                 res = check_grounding(answer, allowed)
             except (BudgetExceeded, LLMUnavailable):
@@ -117,8 +163,13 @@ async def output_guard(state: DPState, config: RunnableConfig) -> dict:
             answer, removed = stripped.text, stripped.removed
             if not answer:
                 answer = _fallback_answer(state)
-        grounding = {"checked": res.checked, "removed": removed, "ok": not removed, "rewritten": rewritten,
-                     "ungrounded_first_draft": res.ungrounded if not rewritten else None}
+        grounding = {
+            "checked": res.checked,
+            "removed": removed,
+            "ok": not removed,
+            "rewritten": rewritten,
+            "ungrounded_first_draft": res.ungrounded if not rewritten else None,
+        }
         sp.status = "ok" if not removed else "blocked"
         ctx.set_io(sp, None, grounding)
     ctx.send("grounding", grounding)

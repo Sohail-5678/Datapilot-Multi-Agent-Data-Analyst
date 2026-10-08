@@ -1,0 +1,48 @@
+# Render Blueprint (SPEC §14.5). Dashboard → New → Blueprint → pick this repo, then paste the secrets marked
+# sync: false. Plan is free: no card, no charges. Only GROQ_API_KEY is required; the others are optional.
+services:
+  - type: web
+    name: datapilot-analyst-api
+    runtime: docker
+    plan: free
+    region: oregon
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: GROQ_API_KEY        # required — Qwen 27B candidates, Prompt Guard 2 (limits are per Groq org)
+        sync: false
+      - key: GEMINI_API_KEY      # optional but recommended — AI Studio project "datapilot" (main model, embeddings)
+        sync: false
+      - key: DATABASE_URL        # optional — Neon pooled URL; without it, threads live in an ephemeral SQLite file
+        sync: false
+      # Model ids (SPEC §S.1) — verify in the provider consoles; change here without a code change.
+      - key: MAIN_MODEL
+        value: gemini-3-flash-preview
+      - key: LITE_MODEL
+        value: gemini-3.1-flash-lite-preview
+      - key: EMBED_MODEL
+        value: gemini-embedding-001
+      - key: FAST_MODEL
+        value: qwen/qwen3.8-27b
+      - key: ALT_MODEL
+        value: openai/gpt-oss-120b
+      - key: GUARD_MODEL
+        value: meta-llama/llama-prompt-guard-2-86m
+      # DataPilot's share of the shared Groq budgets (SPEC §S.1: qwen 50% live; gpt-oss-120b only 10% headroom).
+      - key: DAILY_BUDGET_FAST_REQUESTS
+        value: "500"
+      - key: DAILY_BUDGET_FAST_TOKENS
+        value: "100000"
+      - key: DAILY_BUDGET_ALT_REQUESTS
+        value: "100"
+      - key: DAILY_BUDGET_ALT_TOKENS
+        value: "20000"
+      - key: PROFILE_SOURCE      # "agentforge" once AgentForge is live (then add AGENTFORGE_URL / AGENTFORGE_KEY)
+        value: local
+      - key: JWT_PUBLIC_KEY      # public half of the web app's ES256 signing key (safe to publish)
+        value: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFWUkwbnRYdjVzc1lvRXBhTTBINzNTQjFzdEljQgp5eEcrWldCWUV3WGFpZDdpQmx6MHJ0T2lyV1JOYmFqUjlWOVdwKzQxcHpDeG9CcnhNRnJYdTcycEpBPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==
+      - key: ALLOWED_ORIGINS
+        value: https://datapilot-analyst.vercel.app

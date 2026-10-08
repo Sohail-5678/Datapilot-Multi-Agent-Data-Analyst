@@ -75,7 +75,11 @@ app.add_middleware(
 @app.middleware("http")
 async def guard_requests(request: Request, call_next):  # type: ignore[no-untyped-def]
     if request.url.path.startswith("/v1/"):
-        ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(",")[0].strip()
+        ip = (
+            (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?"))
+            .split(",")[0]
+            .strip()
+        )
         try:
             ratelimit.check_ip(ip)
         except ApiError as e:
@@ -99,7 +103,11 @@ async def healthz() -> dict:
         "dbs_loaded": len(cat),
         "indexes_ready": _ready["indexes"],
         "value_index_mb": index_stats().get("_total_mb", 0),
-        "rss_mb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1e6 if __import__("sys").platform == "darwin" else 1e3), 1),
+        "rss_mb": round(
+            resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            / (1e6 if __import__("sys").platform == "darwin" else 1e3),
+            1,
+        ),
         "uptime_s": int(time.time() - STARTED),
         "version": get_settings().git_sha[:12],
     }
@@ -165,7 +173,14 @@ async def schema(db_id: str, _p: Principal = Depends(current_principal)) -> dict
                         "name": c.name,
                         "type": c.type,
                         "pk": c.pk,
-                        "fk": next(({"table": f.ref_table, "column": f.ref_column} for f in t.foreign_keys if f.column == c.name), None),
+                        "fk": next(
+                            (
+                                {"table": f.ref_table, "column": f.ref_column}
+                                for f in t.foreign_keys
+                                if f.column == c.name
+                            ),
+                            None,
+                        ),
                         "description": c.description,
                         "value_description": c.value_description,
                         "samples": [mask_value(x) for x in c.samples] if c.pii else c.samples,
@@ -175,8 +190,16 @@ async def schema(db_id: str, _p: Principal = Depends(current_principal)) -> dict
                 ],
             }
         )
-    return {"db_id": db.db_id, "title": db.title, "description": db.description, "tables": tables, "erd": _erd(db),
-            "examples": db.examples, "source": db.source, "license": db.license}
+    return {
+        "db_id": db.db_id,
+        "title": db.title,
+        "description": db.description,
+        "tables": tables,
+        "erd": _erd(db),
+        "examples": db.examples,
+        "source": db.source,
+        "license": db.license,
+    }
 
 
 # ---------------------------------------------------------------- threads & ask
@@ -227,13 +250,23 @@ async def ask(thread_id: str, body: Ask, p: Principal = Depends(current_principa
     t = await _own_thread(thread_id, p)
     s = get_settings()
     if not s.llm_available:
-        raise ApiError(503, "quota_exhausted", "No AI provider is configured on the server yet; you can still browse databases and benchmarks.")
+        raise ApiError(
+            503,
+            "quota_exhausted",
+            "No AI provider is configured on the server yet; you can still browse databases and benchmarks.",
+        )
     status = llm_status()
     if not status["available"]:
-        raise ApiError(503, "quota_exhausted", "Free AI quota for today is used up; you can still browse benchmarks and past answers.")
+        raise ApiError(
+            503,
+            "quota_exhausted",
+            "Free AI quota for today is used up; you can still browse benchmarks and past answers.",
+        )
     ratelimit.check_question(p.user_id, p.role)
     history = await persist.thread_history(thread_id)
-    h = await start_run(thread_id=thread_id, owner=p.user_id, db_id=t.db_id, question=body.question.strip(), history=history)
+    h = await start_run(
+        thread_id=thread_id, owner=p.user_id, db_id=t.db_id, question=body.question.strip(), history=history
+    )
     return _sse_response(stream(h, 0))
 
 
@@ -247,7 +280,9 @@ async def _own_run(run_id: str, p: Principal):  # type: ignore[no-untyped-def]
 
 
 @app.get("/v1/runs/{run_id}/events")
-async def events(run_id: str, after: int = Query(default=0, ge=0), request: Request = None, p: Principal = Depends(current_principal)) -> StreamingResponse:  # type: ignore[assignment]
+async def events(
+    run_id: str, after: int = Query(default=0, ge=0), request: Request = None, p: Principal = Depends(current_principal)
+) -> StreamingResponse:  # type: ignore[assignment]
     h = await _own_run(run_id, p)
     if h is None:
         raise ApiError(404, "not_found", "This run is no longer live; open it from the conversation instead.")
@@ -311,7 +346,9 @@ async def sandbox_result(run_id: str, body: SandboxResult, p: Principal = Depend
     if h is None or not h.pending or h.pending.get("request_id") != body.request_id:
         raise ApiError(409, "not_waiting", "This run isn't waiting for that sandbox result.")
     if len(json.dumps(body.result, default=str)) > 50_000:
-        body = SandboxResult(request_id=body.request_id, ok=False, error="Result larger than 50 KB.", duration_ms=body.duration_ms)
+        body = SandboxResult(
+            request_id=body.request_id, ok=False, error="Result larger than 50 KB.", duration_ms=body.duration_ms
+        )
     resolve(h, "sandbox", {**body.model_dump(), "ran_in": "browser"})
     return {"ok": True}
 
@@ -333,12 +370,32 @@ async def user_sql(body: UserSql, p: Principal = Depends(current_principal)) -> 
     if not body.confirm:
         est = await asyncio.to_thread(estimate_cost, db.path, g.sql, {n: t.row_count for n, t in db.tables.items()})
         if est.scanned_rows > s.scan_confirm_rows:
-            return {"needs_confirm": True, "scanned_rows": est.scanned_rows, "table": est.biggest_table, "seconds": est.seconds_hint(), "sql": g.sql}
-    res = await asyncio.to_thread(execute_readonly, db.path, g.sql, timeout_s=s.sql_timeout_s, row_cap=s.row_cap, count_sql=g.unlimited_sql or None)
+            return {
+                "needs_confirm": True,
+                "scanned_rows": est.scanned_rows,
+                "table": est.biggest_table,
+                "seconds": est.seconds_hint(),
+                "sql": g.sql,
+            }
+    res = await asyncio.to_thread(
+        execute_readonly,
+        db.path,
+        g.sql,
+        timeout_s=s.sql_timeout_s,
+        row_cap=s.row_cap,
+        count_sql=g.unlimited_sql or None,
+    )
     await persist.audit(p.user_id, "user_sql", db.db_id, {"ok": res.ok, "rows": res.row_count})
     if not res.ok:
         raise ApiError(422, "sql_error", res.error or "Query failed.")
-    return {"sql": g.sql, "columns": res.columns, "rows": res.rows, "row_count": res.row_count, "truncated": res.truncated, "duration_ms": res.duration_ms}
+    return {
+        "sql": g.sql,
+        "columns": res.columns,
+        "rows": res.rows,
+        "row_count": res.row_count,
+        "truncated": res.truncated,
+        "duration_ms": res.duration_ms,
+    }
 
 
 class Feedback(BaseModel):
@@ -353,7 +410,9 @@ async def run_feedback(run_id: str, body: Feedback, p: Principal = Depends(curre
         raise ApiError(404, "not_found", "Run not found.")
     await persist.save_feedback(run_id, body.thumbs, body.comment)
     if body.thumbs == 1 and run.get("chosen_sql") and run.get("status") == "success":
-        await sql_cache.store(run["db_id"], run["question"], run["chosen_sql"], "", "thumbs_up", run.get("profile_version") or "")
+        await sql_cache.store(
+            run["db_id"], run["question"], run["chosen_sql"], "", "thumbs_up", run.get("profile_version") or ""
+        )
     agentforge.submit_feedback(run_id, body.thumbs, body.comment)
     return {"ok": True}
 

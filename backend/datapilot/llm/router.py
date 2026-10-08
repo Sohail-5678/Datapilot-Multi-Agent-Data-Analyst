@@ -115,7 +115,9 @@ async def complete(
     if s.fake_llm:
         from datapilot.llm.fake import fake_complete
 
-        return await _traced(ctx, step, "fake", "fake-llm", lambda: fake_complete(step, system, prompt, json_mode), span_attrs)
+        return await _traced(
+            ctx, step, "fake", "fake-llm", lambda: fake_complete(step, system, prompt, json_mode), span_attrs
+        )
 
     errors: list[str] = []
     quota_hit = False
@@ -133,7 +135,9 @@ async def complete(
         if _breaker_open(provider):
             errors.append(f"{provider} circuit open")
             continue
-        cache_key = _cache_key(model, system, prompt, json_mode, temperature) if ctx and ctx.llm_cache is not None else None
+        cache_key = (
+            _cache_key(model, system, prompt, json_mode, temperature) if ctx and ctx.llm_cache is not None else None
+        )
         if cache_key and cache_key in ctx.llm_cache:  # type: ignore[union-attr]
             hit = ctx.llm_cache[cache_key]  # type: ignore[union-attr]
             return await _traced(
@@ -236,7 +240,9 @@ async def complete_model(
     max_tokens: int = 1024,
 ) -> M:
     """JSON output validated with Pydantic; one retry with the validation error (SPEC §9.1)."""
-    res = await complete(ctx, step, system, prompt, kinds=kinds, json_mode=True, temperature=temperature, max_tokens=max_tokens)
+    res = await complete(
+        ctx, step, system, prompt, kinds=kinds, json_mode=True, temperature=temperature, max_tokens=max_tokens
+    )
     try:
         return schema.model_validate(parse_json(res.text))
     except (ValueError, ValidationError) as e:
@@ -249,7 +255,9 @@ async def complete_model(
             f"{prompt}\n\nYour previous reply was not valid for the required JSON schema.\n"
             f"Error: {str(e)[:400]}\nReply again with JSON only."
         )
-        res = await complete(ctx, step, system, fix, kinds=kinds, json_mode=True, temperature=0.0, max_tokens=max_tokens)
+        res = await complete(
+            ctx, step, system, fix, kinds=kinds, json_mode=True, temperature=0.0, max_tokens=max_tokens
+        )
         return schema.model_validate(parse_json(res.text))
 
 

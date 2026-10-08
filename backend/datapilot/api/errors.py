@@ -18,4 +18,6 @@ class ApiError(Exception):
 async def api_error_handler(_request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, ApiError)
     headers = {"Retry-After": str(exc.extra["retry_after"])} if "retry_after" in exc.extra else None
-    return JSONResponse({"error": {"code": exc.code, "message": exc.message, **exc.extra}}, status_code=exc.status, headers=headers)
+    return JSONResponse(
+        {"error": {"code": exc.code, "message": exc.message, **exc.extra}}, status_code=exc.status, headers=headers
+    )

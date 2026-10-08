@@ -95,7 +95,9 @@ def allowed_values(results: Iterable[dict], analysis: Any = None, question: str 
         # column aggregates
         cols = list(zip(*rows, strict=False)) if rows else []
         for col in cols:
-            nums = [float(v) for v in col if isinstance(v, int | float) and not isinstance(v, bool) and math.isfinite(v)]
+            nums = [
+                float(v) for v in col if isinstance(v, int | float) and not isinstance(v, bool) and math.isfinite(v)
+            ]
             if nums:
                 total = sum(nums)
                 derived.update({total, total / len(nums), max(nums) - min(nums), float(len(nums))})

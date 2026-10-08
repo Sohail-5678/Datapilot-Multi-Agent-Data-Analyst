@@ -18,7 +18,6 @@ from typing import Any
 from datapilot.config import get_settings
 from datapilot.guards.pii import redact_text
 
-
 # Current span chain. A ContextVar (not a list on RunCtx) so parallel graph branches — each its own asyncio
 # task with a copied context — nest their spans correctly instead of under each other.
 _SPAN_STACK: ContextVar[tuple[str, ...]] = ContextVar("dp_span_stack", default=())
@@ -154,7 +153,8 @@ class RunCtx:
             sp.status, sp.error = "error", f"{type(e).__name__}: {e}"[:500]
             raise
         finally:
-            sp.duration_ms = int((time.perf_counter() - sp._t0) * 1000)
+            if not sp.duration_ms:  # a span may report its own duration (the browser sandbox's run time)
+                sp.duration_ms = int((time.perf_counter() - sp._t0) * 1000)
             _SPAN_STACK.reset(token)
             if kind == "tool":
                 self.tool_calls += 1
@@ -183,7 +183,9 @@ class RunCtx:
             "list_price_cost_usd": round(self.cost_usd, 6),
         }
 
-    def trace(self, *, status: str, question: str, final_output: dict, end_state: dict, feedback: dict | None = None) -> dict:
+    def trace(
+        self, *, status: str, question: str, final_output: dict, end_state: dict, feedback: dict | None = None
+    ) -> dict:
         s = get_settings()
         return {
             "contract_version": "trace.v1",

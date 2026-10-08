@@ -31,7 +31,11 @@ def column_kinds(columns: list[str], rows: list[list[Any]]) -> dict[str, str]:
     for i, c in enumerate(columns):
         vals = [r[i] for r in rows[:200] if r[i] is not None]
         if vals and all(_is_num(v) for v in vals):
-            kinds[c] = "temporal" if _DATEISH.search(c) and all(1900 <= v <= 2100 for v in vals if _is_num(v)) else "quantitative"
+            kinds[c] = (
+                "temporal"
+                if _DATEISH.search(c) and all(1900 <= v <= 2100 for v in vals if _is_num(v))
+                else "quantitative"
+            )
         elif vals and all(isinstance(v, str) and re.match(r"^\d{4}(-\d{2})?(-\d{2})?", v) for v in vals):
             kinds[c] = "temporal"
         else:
@@ -91,19 +95,39 @@ def auto_chart(columns: list[str], rows: list[list[Any]], title: str | None = No
     cats = [c for c in columns if kinds[c] == "nominal"]
     if times and nums:
         x, y = times[0], nums[0]
-        return {"mark": "line", "encoding": {"x": {"field": x, "type": "temporal" if not all(_is_num(r[columns.index(x)]) for r in rows) else "ordinal"},
-                                              "y": {"field": y, "type": "quantitative"},
-                                              "tooltip": [{"field": x, "type": "nominal"}, {"field": y, "type": "quantitative"}]},
-                **({"title": title} if title else {})}
+        return {
+            "mark": "line",
+            "encoding": {
+                "x": {
+                    "field": x,
+                    "type": "temporal" if not all(_is_num(r[columns.index(x)]) for r in rows) else "ordinal",
+                },
+                "y": {"field": y, "type": "quantitative"},
+                "tooltip": [{"field": x, "type": "nominal"}, {"field": y, "type": "quantitative"}],
+            },
+            **({"title": title} if title else {}),
+        }
     if cats and nums and len(rows) <= 60:
         x, y = cats[0], nums[0]
-        return {"mark": "bar", "encoding": {"y": {"field": x, "type": "nominal", "sort": "-x"}, "x": {"field": y, "type": "quantitative"},
-                                             "tooltip": [{"field": x, "type": "nominal"}, {"field": y, "type": "quantitative"}]},
-                **({"title": title} if title else {})}
+        return {
+            "mark": "bar",
+            "encoding": {
+                "y": {"field": x, "type": "nominal", "sort": "-x"},
+                "x": {"field": y, "type": "quantitative"},
+                "tooltip": [{"field": x, "type": "nominal"}, {"field": y, "type": "quantitative"}],
+            },
+            **({"title": title} if title else {}),
+        }
     if len(nums) >= 2:
-        return {"mark": "point", "encoding": {"x": {"field": nums[0], "type": "quantitative"}, "y": {"field": nums[1], "type": "quantitative"},
-                                               "tooltip": [{"field": nums[0], "type": "quantitative"}, {"field": nums[1], "type": "quantitative"}]},
-                **({"title": title} if title else {})}
+        return {
+            "mark": "point",
+            "encoding": {
+                "x": {"field": nums[0], "type": "quantitative"},
+                "y": {"field": nums[1], "type": "quantitative"},
+                "tooltip": [{"field": nums[0], "type": "quantitative"}, {"field": nums[1], "type": "quantitative"}],
+            },
+            **({"title": title} if title else {}),
+        }
     return None
 
 
@@ -132,7 +156,9 @@ async def chart(state: DPState, config: RunnableConfig) -> dict:
                     f"{len(rows)} rows in total.",
                 ]
             )
-            res = await complete(ctx, "chart", ctx.profile.prompts["chart"], prompt, kinds=["lite"], json_mode=True, max_tokens=400)
+            res = await complete(
+                ctx, "chart", ctx.profile.prompts["chart"], prompt, kinds=["lite"], json_mode=True, max_tokens=400
+            )
             spec = validate_spec(parse_json(res.text), cols)
             source = "llm" if spec else "rules (model spec failed validation)"
         except BudgetExceeded:

@@ -26,9 +26,12 @@ def _key(row: list[Any] | tuple[Any, ...]) -> str:
 def is_ordered(sql: str) -> bool:
     """Row order matters only for a top-level ORDER BY + LIMIT (a ranking)."""
     s = re.sub(r"'(?:[^']|'')*'", "''", sql.lower())
-    # crude but safe: last ORDER BY appears after the last closing paren
-    tail = s[s.rfind(")") + 1 :] if ")" in s else s
-    return "order by" in tail and "limit" in tail
+    # Keep only the top level: drop every parenthesized group (subqueries, CTE bodies, window specs and
+    # function calls such as ORDER BY COUNT(*) DESC), innermost first.
+    prev = None
+    while prev != s:
+        prev, s = s, re.sub(r"\([^()]*\)", " ", s)
+    return bool(re.search(r"\border\s+by\b", s) and re.search(r"\blimit\b", s))
 
 
 def result_hash(rows: list[list[Any]], ordered: bool = False) -> str:

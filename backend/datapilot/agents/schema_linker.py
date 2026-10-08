@@ -6,7 +6,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
 
-from datapilot.agents.state import DPState, current_step, ctx_of, database_for, tag
+from datapilot.agents.state import DPState, ctx_of, current_step, database_for, tag
 from datapilot.index import cache as sql_cache
 from datapilot.index.catalog import Database
 from datapilot.index.schema_index import embed_query, ensure_embeddings, join_paths, rank_columns, render_schema
@@ -103,7 +103,9 @@ async def schema_linker(state: DPState, config: RunnableConfig) -> dict:
                     "\n\n".join(
                         [
                             tag("schema", _names_only(db, cand_tables)),
-                            tag("values", "\n".join(f"{v['table']}.{v['column']} = {v['value']!r}" for v in values[:8])),
+                            tag(
+                                "values", "\n".join(f"{v['table']}.{v['column']} = {v['value']!r}" for v in values[:8])
+                            ),
                             tag("evidence", state.get("evidence") or ""),
                             tag("question", query),
                         ]
@@ -159,10 +161,15 @@ async def schema_linker(state: DPState, config: RunnableConfig) -> dict:
             "cached_sql": cached,
         }
         ctx.set_io(sp, {"goal": goal}, {k: v for k, v in linked.items() if k != "schema"})
-    label = (f"Schema ready · all {n_tables} tables" if pruned_by == "full schema"
-             else f"Finding relevant tables… {n_tables} table{'s' if n_tables != 1 else ''} found")
+    label = (
+        f"Schema ready · all {n_tables} tables"
+        if pruned_by == "full schema"
+        else f"Finding relevant tables… {n_tables} table{'s' if n_tables != 1 else ''} found"
+    )
     if values:
         label += f", {len(values)} value link{'s' if len(values) != 1 else ''}"
-    ctx.send("step", {"node": "schema_linker", "status": "done", "label": label,
-                      "tables": linked["tables"], "values": values[:6]})
+    ctx.send(
+        "step",
+        {"node": "schema_linker", "status": "done", "label": label, "tables": linked["tables"], "values": values[:6]},
+    )
     return {"linked": linked, "candidates": "__reset__"}

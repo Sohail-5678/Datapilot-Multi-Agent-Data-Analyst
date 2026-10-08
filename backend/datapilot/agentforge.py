@@ -31,7 +31,9 @@ def submit_trace(trace: dict) -> None:
 def submit_feedback(run_id: str, thumbs: int, comment: str | None) -> None:
     if not enabled():
         return
-    asyncio.get_running_loop().create_task(_post("/v1/feedback", {"agent": "datapilot", "trace_id": run_id, "thumbs": thumbs, "comment": comment}))
+    asyncio.get_running_loop().create_task(
+        _post("/v1/feedback", {"agent": "datapilot", "trace_id": run_id, "thumbs": thumbs, "comment": comment})
+    )
 
 
 def _kick() -> None:
@@ -55,7 +57,9 @@ async def _post(path: str, body: dict) -> bool:
     s = get_settings()
     try:
         async with httpx.AsyncClient(timeout=8) as c:
-            r = await c.post(f"{s.agentforge_url.rstrip('/')}{path}", json=body, headers={"X-AgentForge-Key": s.agentforge_key})
+            r = await c.post(
+                f"{s.agentforge_url.rstrip('/')}{path}", json=body, headers={"X-AgentForge-Key": s.agentforge_key}
+            )
             return r.status_code < 300
     except httpx.HTTPError as e:
         log.info("agentforge export failed: %s", e)

@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend · lint, tests (fake LLM)
+    runs-on: ubuntu-latest
+    env:
+      FAKE_LLM: "true"
+      GROQ_API_KEY: ""
+      GEMINI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with: { enable-cache: true }
+      - uses: actions/setup-node@v5
+        with: { node-version: 24 }
+      - name: Install
+        working-directory: backend
+        run: uv sync --frozen
+      - name: Demo databases (release asset, checksum-verified)
+        working-directory: backend
+        run: uv run python scripts/fetch_dbs.py
+      - name: Sandbox runner deps (Node Pyodide, for eval-mode analysis steps)
+        working-directory: sandbox
+        run: npm ci
+      - name: Lint
+        working-directory: backend
+        run: uv run ruff check datapilot scripts && uv run ruff format --check datapilot scripts
+      - name: Tests
+        working-directory: backend
+        run: uv run pytest -q
+      - name: Eval adapter smoke (10 case.v1 cases, fake LLM)
+        working-directory: backend
+        run: uv run python -m datapilot.eval_adapter run --cases ../evals/cases/smoke.jsonl --profile profiles/default.json --out /tmp/eval.jsonl --fake-llm
+
+  sandbox:
+    name: Sandbox · Pyodide lockdown tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sandbox
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: npm, cache-dependency-path: sandbox/package-lock.json }
+      - run: npm ci
+      - run: npm test
+
+  web:
+    name: Web · lint, typecheck, unit tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: apps/web/pnpm-lock.yaml }
+      - run: pnpm install --frozen-lockfile
+      - name: Sandbox worker is in sync with the shared lockdown
+        run: node scripts/sync-sandbox.mjs && git diff --exit-code -- public/sandbox sandbox/version.ts
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+        env:
+          AUTH_SECRET: ci-only-not-a-secret
+
+  docker:
+    name: Docker · backend image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t datapilot-api backend
+
+  secrets:
+    name: Secrets · gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  e2e:
+    name: E2E · Playwright + axe (fake LLM, real stack)
+    runs-on: ubuntu-latest
+    needs: [backend, web]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with: { enable-cache: true }
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: apps/web/pnpm-lock.yaml }
+      - name: Backend + demo databases
+        working-directory: backend
+        run: uv sync --frozen && uv run python scripts/fetch_dbs.py
+      - name: Throwaway ES256 key pair
+        run: |
+          openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -out /tmp/jwt.pem
+          openssl ec -in /tmp/jwt.pem -pubout -out /tmp/jwt.pub 2>/dev/null
+          echo "E2E_JWT_PRIVATE_KEY=$(base64 -w0 /tmp/jwt.pem)" >> "$GITHUB_ENV"
+          echo "E2E_JWT_PUBLIC_KEY=$(base64 -w0 /tmp/jwt.pub)" >> "$GITHUB_ENV"
+      - name: Install web + browser
+        working-directory: apps/web
+        run: pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium
+      - name: Playwright
+        working-directory: apps/web
+        run: pnpm e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-traces, path: apps/web/test-results, retention-days: 7 }

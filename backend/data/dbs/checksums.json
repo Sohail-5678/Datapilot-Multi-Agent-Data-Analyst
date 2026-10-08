@@ -1,0 +1,22 @@
+{
+  "chinook/chinook.sqlite": {
+    "sha256": "bdf635be69850bd3be09c9a2dbeef7ddfb80036bd3ef3381383cd03b61e4a61a",
+    "bytes": 1067008
+  },
+  "european_football_2/european_football_2.sqlite": {
+    "sha256": "f18eefa0eb8f449dbde5b14d880ed3505cbf6002d85d40c6cda9ad55e2d90792",
+    "bytes": 38555648
+  },
+  "formula_1/formula_1.sqlite": {
+    "sha256": "79770caf966707e35516fa566e24b40ae515c74ec1ec4631235245645b87b24d",
+    "bytes": 22360064
+  },
+  "student_club/student_club.sqlite": {
+    "sha256": "eb89bcfe97eefa386a27904ec5aa15159811a7eac894ec659a36e48fa9f76b77",
+    "bytes": 2641920
+  },
+  "superhero/superhero.sqlite": {
+    "sha256": "75e94a2c3236ee3bb2c01fb97a1c4b4c1c269bcefd4eab1d04be323d2d0825b1",
+    "bytes": 237568
+  }
+}

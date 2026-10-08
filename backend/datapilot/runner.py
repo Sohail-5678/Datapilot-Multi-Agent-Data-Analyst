@@ -74,13 +74,16 @@ async def run_question(
                 resume = await on_interrupt(payload)
             finally:
                 ctx.budget.waited_s += time.perf_counter() - t0
-            inp = Command(resume=resume)
+            # LangGraph can't resume with None (it crashes); "" means "no answer" to every checkpoint node.
+            inp = Command(resume="" if resume is None else resume)
     finally:
         forget_run(ctx.run_id)
     return finalize(ctx, question, state, clarified, confirmed, sandbox_used)
 
 
-def finalize(ctx: RunCtx, question: str, state: dict, clarified: bool, confirmed: bool, sandbox_used: bool) -> RunOutcome:
+def finalize(
+    ctx: RunCtx, question: str, state: dict, clarified: bool, confirmed: bool, sandbox_used: bool
+) -> RunOutcome:
     status = state.get("status") or "error"
     results = state.get("step_results") or []
     last_ok = next((r for r in reversed(results) if r.get("ok")), None)
@@ -101,7 +104,14 @@ def finalize(ctx: RunCtx, question: str, state: dict, clarified: bool, confirmed
         "chart": (state.get("chart") or {}).get("spec"),
         "plan": [s.get("goal") for s in state.get("plan") or []],
     }
-    trace_status = {"success": "success", "failure": "failure", "blocked": "blocked", "budget_exceeded": "budget_exceeded",
-                    "needs_human": "needs_human", "cancelled": "needs_human", "quota_exhausted": "error"}.get(status, "error")
+    trace_status = {
+        "success": "success",
+        "failure": "failure",
+        "blocked": "blocked",
+        "budget_exceeded": "budget_exceeded",
+        "needs_human": "needs_human",
+        "cancelled": "needs_human",
+        "quota_exhausted": "error",
+    }.get(status, "error")
     trace = ctx.trace(status=trace_status, question=question, final_output=final_output, end_state=end_state)
     return RunOutcome(state, status, trace, end_state, final_output, clarified, confirmed, sandbox_used)

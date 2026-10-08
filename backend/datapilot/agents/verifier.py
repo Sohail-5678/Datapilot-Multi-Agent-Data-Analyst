@@ -16,11 +16,20 @@ from langgraph.types import Send, interrupt
 from pydantic import BaseModel, Field
 
 from datapilot.agents.sql_agent import _execute, _fill, _guard, preview_for_verifier
-from datapilot.agents.state import DPState, current_step, ctx_of, database_for, history_text, tag
+from datapilot.agents.state import DPState, ctx_of, current_step, database_for, history_text, tag
 from datapilot.config import get_settings
 from datapilot.index import cache as sql_cache
 from datapilot.llm.router import LLMUnavailable, complete_model
 from datapilot.tracing import BudgetExceeded
+
+_background: set[asyncio.Task] = set()
+
+
+def _spawn(coro) -> None:  # type: ignore[no-untyped-def]
+    """Fire-and-forget with a strong reference (asyncio only keeps weak ones)."""
+    task = asyncio.get_running_loop().create_task(coro)
+    _background.add(task)
+    task.add_done_callback(_background.discard)
 
 
 class VerifyOut(BaseModel):
@@ -92,8 +101,14 @@ async def vote(state: DPState, config: RunnableConfig) -> dict:
     with ctx.span("node", "vote") as sp:
         ctx.set_io(sp, None, {"groups": {h: ids for h, ids in groups.items()}, "decision": decision, "more": more})
     if decision == "more":
-        ctx.send("step", {"node": "verifier", "status": "running",
-                          "label": "Candidates disagree — running a third strategy to break the tie…"})
+        ctx.send(
+            "step",
+            {
+                "node": "verifier",
+                "status": "running",
+                "label": "Candidates disagree — running a third strategy to break the tie…",
+            },
+        )
     return {"vote": {"decision": decision, "more": more, "groups": dict(groups)}}
 
 
@@ -130,8 +145,14 @@ async def confirm(state: DPState, config: RunnableConfig) -> dict:
     if action == "cancel":
         return {"stop": "cancelled", "confirmed": False}
     if action != "run":
-        return {"stop": "needs_human", "confirmed": False,
-                "notes": [*(state.get("notes") or []), "Add a filter (a season, team or year) and ask again to narrow it down."]}
+        return {
+            "stop": "needs_human",
+            "confirmed": False,
+            "notes": [
+                *(state.get("notes") or []),
+                "Add a filter (a season, team or year) and ask again to narrow it down.",
+            ],
+        }
     ctx.send("step", {"node": "executor", "status": "running", "label": "Running the confirmed query…"})
 
     async def run_one(c: dict) -> dict:
@@ -145,7 +166,9 @@ async def confirm(state: DPState, config: RunnableConfig) -> dict:
             _fill(c, res, g.sql)
         else:
             c.update(status="error", error=res.error)
-        ctx.send("candidate", {"id": c["id"], "strategy": c["strategy"], "status": c["status"], "row_count": c["row_count"]})
+        ctx.send(
+            "candidate", {"id": c["id"], "strategy": c["strategy"], "status": c["status"], "row_count": c["row_count"]}
+        )
         return c
 
     updated = await asyncio.gather(*(run_one(c) for c in cands))
@@ -196,7 +219,11 @@ async def verify(state: DPState, config: RunnableConfig) -> dict:
             if pick["repairs"]:
                 reasons.append(f"{pick['repairs']} repair{'s' if pick['repairs'] > 1 else ''} used")
             chosen = {**pick, "confidence": confidence, "reasons": reasons, "agree": agree, "of": n, "issues": issues}
-        ctx.set_io(sp, {"groups": len(ranked)}, {"chosen": chosen and chosen["id"], "confidence": chosen and chosen["confidence"]})
+        ctx.set_io(
+            sp,
+            {"groups": len(ranked)},
+            {"chosen": chosen and chosen["id"], "confidence": chosen and chosen["confidence"]},
+        )
 
     results = list(state.get("step_results") or [])
     data_ref = f"r{state.get('step_idx', 0) + 1}-{uuid.uuid4().hex[:6]}"
@@ -214,22 +241,53 @@ async def verify(state: DPState, config: RunnableConfig) -> dict:
         "data_ref": data_ref,
         "needs_chart": step.get("needs_chart", False),
         "candidates": [
-            {k: c.get(k) for k in ("id", "strategy", "model", "sql", "status", "row_count", "result_hash", "repairs", "error")}
+            {
+                k: c.get(k)
+                for k in ("id", "strategy", "model", "sql", "status", "row_count", "result_hash", "repairs", "error")
+            }
             for c in cands
         ],
         "ok": chosen is not None,
     }
     results.append(step_result)
-    ctx.data[data_ref] = {"columns": step_result["columns"], "rows": step_result["rows"], "total_rows": step_result["row_count"]}
+    ctx.data[data_ref] = {
+        "columns": step_result["columns"],
+        "rows": step_result["rows"],
+        "total_rows": step_result["row_count"],
+    }
     if chosen:
-        ctx.send("chosen", {"step_idx": step_result["step_idx"], "sql": chosen["sql"], "confidence": chosen["confidence"],
-                            "reasons": chosen["reasons"], "agree": chosen["agree"], "of": chosen["of"]})
-        ctx.send("table", {"data_ref": data_ref, "columns": chosen["columns"], "rows": chosen["rows"],
-                           "row_count": chosen["row_count"], "truncated": chosen["truncated"], "step_idx": step_result["step_idx"]})
+        ctx.send(
+            "chosen",
+            {
+                "step_idx": step_result["step_idx"],
+                "sql": chosen["sql"],
+                "confidence": chosen["confidence"],
+                "reasons": chosen["reasons"],
+                "agree": chosen["agree"],
+                "of": chosen["of"],
+            },
+        )
+        ctx.send(
+            "table",
+            {
+                "data_ref": data_ref,
+                "columns": chosen["columns"],
+                "rows": chosen["rows"],
+                "row_count": chosen["row_count"],
+                "truncated": chosen["truncated"],
+                "step_idx": step_result["step_idx"],
+            },
+        )
         if chosen["confidence"] == "High" and ctx.mode == "live":
-            asyncio.create_task(
-                sql_cache.store(db.db_id, state["question"] if len(state.get("plan") or []) == 1 else step_result["goal"],
-                                chosen["sql"], chosen["result_hash"], "high_confidence", ctx.profile.version_label)
+            _spawn(
+                sql_cache.store(
+                    db.db_id,
+                    state["question"] if len(state.get("plan") or []) == 1 else step_result["goal"],
+                    chosen["sql"],
+                    chosen["result_hash"],
+                    "high_confidence",
+                    ctx.profile.version_label,
+                )
             )
     update: dict = {"chosen": {k: v for k, v in (chosen or {}).items() if k != "rows"} or None, "step_results": results}
     if stop:
@@ -240,19 +298,29 @@ async def verify(state: DPState, config: RunnableConfig) -> dict:
 async def _llm_verify(ctx, db, state: DPState, step: dict, reps: list[dict]) -> VerifyOut:  # type: ignore[no-untyped-def]
     blocks = []
     for c in reps:
-        blocks.append(f"Candidate {c['id']} ({c['row_count']} rows):\n{c['sql']}\nResult preview:\n{preview_for_verifier(db, c)}")
+        blocks.append(
+            f"Candidate {c['id']} ({c['row_count']} rows):\n{c['sql']}\nResult preview:\n{preview_for_verifier(db, c)}"
+        )
     prompt = "\n\n".join(
         x
         for x in (
             tag("schema", state["linked"]["schema"]),
             tag("evidence", state["evidence"]) if state.get("evidence") else "",
             history_text(state),
-            tag("question", (state["question"] + ("\nThis step: " + step["goal"] if step.get("goal") and step["goal"] != state["question"] else "")
-                              + (f"\nThe user clarified: {state['clarification']}" if state.get("clarification") else ""))),
+            tag(
+                "question",
+                (
+                    state["question"]
+                    + ("\nThis step: " + step["goal"] if step.get("goal") and step["goal"] != state["question"] else "")
+                    + (f"\nThe user clarified: {state['clarification']}" if state.get("clarification") else "")
+                ),
+            ),
             tag("candidates", "\n\n".join(blocks)),
             f"Strictness: {ctx.profile.p('verifier_strictness', 'normal')}.",
         )
         if x
     )
-    out = await complete_model(ctx, "verifier", ctx.profile.prompts["verifier"], prompt, VerifyOut, kinds=["main", "fast"], max_tokens=400)
+    out = await complete_model(
+        ctx, "verifier", ctx.profile.prompts["verifier"], prompt, VerifyOut, kinds=["main", "fast"], max_tokens=400
+    )
     return out

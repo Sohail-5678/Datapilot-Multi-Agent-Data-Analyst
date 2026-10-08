@@ -91,8 +91,17 @@ async def start_run(*, thread_id: str, owner: str, db_id: str, question: str, hi
     ctx.emit = h.emit
     _runs[run_id] = h
     await persist.create_run(run_id, thread_id, owner, db_id, question, profile.version_label)
-    h.emit("run", {"run_id": run_id, "thread_id": thread_id, "db_id": db_id, "question": question,
-                   "fake_llm": get_settings().fake_llm, "profile_version": profile.version_label})
+    h.emit(
+        "run",
+        {
+            "run_id": run_id,
+            "thread_id": thread_id,
+            "db_id": db_id,
+            "question": question,
+            "fake_llm": get_settings().fake_llm,
+            "profile_version": profile.version_label,
+        },
+    )
     h.task = asyncio.create_task(_drive(h, history))
     return h
 
@@ -115,8 +124,19 @@ async def _drive(h: RunHandle, history: list[dict]) -> None:
             return await asyncio.wait_for(h.waiter, timeout)
         except TimeoutError:
             if kind == "sandbox":
-                h.emit("step", {"node": "sandbox_call", "status": "error", "label": "The browser sandbox didn't answer in time — continuing without the analysis"})
-                return {"ok": False, "error": "The browser sandbox did not return a result within 60 s.", "ran_in": "browser"}
+                h.emit(
+                    "step",
+                    {
+                        "node": "sandbox_call",
+                        "status": "error",
+                        "label": "The browser sandbox didn't answer in time — continuing without the analysis",
+                    },
+                )
+                return {
+                    "ok": False,
+                    "error": "The browser sandbox did not return a result within 60 s.",
+                    "ran_in": "browser",
+                }
             return None if kind == "clarify" else "cancel"
         finally:
             h.pending, h.waiter = None, None
@@ -129,11 +149,34 @@ async def _drive(h: RunHandle, history: list[dict]) -> None:
         if st.get("status") == "blocked":
             h.emit("error", {"code": "blocked", "message": st.get("answer") or "Blocked by the input guard."})
         elif out.status == "quota_exhausted":
-            h.emit("error", {"code": "quota_exhausted", "message": "Free AI quota for today is used up; you can still browse benchmarks and past answers."})
+            h.emit(
+                "error",
+                {
+                    "code": "quota_exhausted",
+                    "message": "Free AI quota for today is used up; you can still browse benchmarks and past answers.",
+                },
+            )
         elif out.status == "budget_exceeded":
-            h.emit("error", {"code": "budget_exceeded", "message": "This question reached its budget; the answer covers what was verified so far.", "fatal": False})
-        h.emit("done", {"run_id": h.run_id, "status": out.status, "answer": st.get("answer"), "confidence": out.end_state["confidence"],
-                        "metrics": out.trace["metrics"], "notes": st.get("notes") or [], "grounding": st.get("grounding")})
+            h.emit(
+                "error",
+                {
+                    "code": "budget_exceeded",
+                    "message": "This question reached its budget; the answer covers what was verified so far.",
+                    "fatal": False,
+                },
+            )
+        h.emit(
+            "done",
+            {
+                "run_id": h.run_id,
+                "status": out.status,
+                "answer": st.get("answer"),
+                "confidence": out.end_state["confidence"],
+                "metrics": out.trace["metrics"],
+                "notes": st.get("notes") or [],
+                "grounding": st.get("grounding"),
+            },
+        )
         agentforge.submit_trace(out.trace)
     except Exception as e:  # noqa: BLE001 — the stream must always end with a terminal event
         log.exception("run %s failed", h.run_id)
@@ -168,9 +211,13 @@ async def stream(h: RunHandle, after: int = 0) -> AsyncIterator[str]:
             yield _sse(seq, event, data)
         if h.done:
             return
+
+        def ready(n: int = sent) -> bool:
+            return len(h.events) > n or h.done
+
         async with h.cond:
             try:
-                await asyncio.wait_for(h.cond.wait_for(lambda: len(h.events) > sent or h.done), HEARTBEAT_S)
+                await asyncio.wait_for(h.cond.wait_for(ready), HEARTBEAT_S)
             except TimeoutError:
                 yield ": heartbeat\n\n"
 

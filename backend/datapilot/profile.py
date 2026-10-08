@@ -84,6 +84,20 @@ class Profile:
         return self.params.get(key, default)
 
 
+def _locked_keys_in(obj: Any) -> set[str]:
+    """Locked keys at any depth (e.g. params.limits.row_cap), case-insensitive."""
+    found: set[str] = set()
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and k.lower() in LOCKED_KEYS:
+                found.add(k.lower())
+            found |= _locked_keys_in(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            found |= _locked_keys_in(v)
+    return found
+
+
 def validate_profile(data: dict) -> Profile:
     if data.get("contract_version") != "profile.v1" or data.get("agent") != "datapilot":
         raise ProfileError("not a datapilot profile.v1")
@@ -93,10 +107,9 @@ def validate_profile(data: dict) -> Profile:
         raise ProfileError(f"missing prompts: {missing}")
     params = dict(data.get("params") or {})
     routing = dict(data.get("routing") or {})
-    for section in (params, routing):
-        bad = LOCKED_KEYS & set(section)
-        if bad:
-            raise ProfileError(f"locked fields cannot be set by a profile: {sorted(bad)}")
+    bad = _locked_keys_in(params) | _locked_keys_in(routing)
+    if bad:
+        raise ProfileError(f"locked fields cannot be set by a profile: {sorted(bad)}")
     for key, (lo, hi) in PARAM_RANGES.items():
         if key in params:
             v = params[key]
@@ -106,7 +119,9 @@ def validate_profile(data: dict) -> Profile:
     if not strategies or set(strategies) - STRATEGIES:
         raise ProfileError(f"candidate_strategies must be a subset of {sorted(STRATEGIES)}")
     for step, r in routing.items():
-        kinds = [r] if isinstance(r, str) else [r.get("primary"), *r.get("fallback", [])] if isinstance(r, dict) else [None]
+        kinds = (
+            [r] if isinstance(r, str) else [r.get("primary"), *r.get("fallback", [])] if isinstance(r, dict) else [None]
+        )
         if any(k not in KINDS for k in kinds):
             raise ProfileError(f"routing for {step} uses unknown model kind {kinds}")
     return Profile(

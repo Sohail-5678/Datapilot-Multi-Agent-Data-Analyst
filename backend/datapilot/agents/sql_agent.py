@@ -34,12 +34,18 @@ def task_prompt(payload: dict, strategy: str) -> str:
     if linked.get("joins"):
         parts.append("Join paths (foreign keys):\n" + "\n".join(linked["joins"]))
     if linked.get("values"):
-        vals = "\n".join(f"{v['table']}.{v['column']} = {v['value']!r}  (matched \"{v['matched']}\")" for v in linked["values"][:10])
+        vals = "\n".join(
+            f'{v["table"]}.{v["column"]} = {v["value"]!r}  (matched "{v["matched"]}")' for v in linked["values"][:10]
+        )
         parts.append(tag("values", vals))
     if strategy == "few_shot":
         ex = linked.get("examples") or []
         body = "\n\n".join(
-            (f"Question: {e['question']}\n" + (f"Evidence: {e['evidence']}\n" if e.get("evidence") else "") + f"SQL: {e['sql']}")
+            (
+                f"Question: {e['question']}\n"
+                + (f"Evidence: {e['evidence']}\n" if e.get("evidence") else "")
+                + f"SQL: {e['sql']}"
+            )
             for e in ex
         )
         parts.append(tag("examples", body or "(no solved examples for this database yet)"))
@@ -83,8 +89,15 @@ async def _repair(ctx: RunCtx, payload: dict, strategy: str, sql: str, problem: 
     prompt = "\n\n".join(
         [task_prompt(payload, "direct"), tag("failed_sql", sql), tag("problem", problem), tag("hints", hints or "none")]
     )
-    res = await complete(ctx, "repair", ctx.profile.prompts["repair"], prompt, kinds=kinds, max_tokens=600,
-                         span_attrs={"strategy": strategy})
+    res = await complete(
+        ctx,
+        "repair",
+        ctx.profile.prompts["repair"],
+        prompt,
+        kinds=kinds,
+        max_tokens=600,
+        span_attrs={"strategy": strategy},
+    )
     return extract_sql(res.text)
 
 
@@ -116,7 +129,12 @@ async def _execute(ctx: RunCtx, db: Database, g: GuardResult) -> ExecResult:
     path = ctx.db_path or db.path
     with ctx.span("tool", "executor") as sp:
         res = await asyncio.to_thread(
-            execute_readonly, path, g.sql, timeout_s=s.sql_timeout_s, row_cap=s.row_cap, count_sql=g.unlimited_sql or None
+            execute_readonly,
+            path,
+            g.sql,
+            timeout_s=s.sql_timeout_s,
+            row_cap=s.row_cap,
+            count_sql=g.unlimited_sql or None,
         )
         sp.status = "ok" if res.ok else "error"
         sp.error = res.error
@@ -154,7 +172,11 @@ async def sql_candidate(payload: dict, config: RunnableConfig) -> dict:
     ctx.send("candidate", {"id": cand["id"], "strategy": strategy, "status": "running"})
     with ctx.span("node", "sql_agent", strategy=strategy, candidate=cand["id"]) as span:
         try:
-            sql = payload["linked"]["cached_sql"] if strategy == "cache" else await _generate(ctx, payload, strategy, cand)
+            sql = (
+                payload["linked"]["cached_sql"]
+                if strategy == "cache"
+                else await _generate(ctx, payload, strategy, cand)
+            )
             if strategy == "cache":
                 cand["model"] = "verified-cache"
             attempts = 0
@@ -175,8 +197,12 @@ async def sql_candidate(payload: dict, config: RunnableConfig) -> dict:
                         est = await asyncio.to_thread(
                             estimate_cost, ctx.db_path or db.path, g.sql, {n: t.row_count for n, t in db.tables.items()}
                         )
-                        cand["cost"] = {"scanned_rows": est.scanned_rows, "table": est.biggest_table,
-                                        "seconds": est.seconds_hint(), "unindexed_join": est.unindexed_join}
+                        cand["cost"] = {
+                            "scanned_rows": est.scanned_rows,
+                            "table": est.biggest_table,
+                            "seconds": est.seconds_hint(),
+                            "unindexed_join": est.unindexed_join,
+                        }
                         if est.scanned_rows > s.scan_confirm_rows:
                             cand["status"] = "needs_confirm"
                             break
@@ -201,10 +227,19 @@ async def sql_candidate(payload: dict, config: RunnableConfig) -> dict:
                     break
                 attempts += 1
                 cand["repairs"] = attempts
-                ctx.send("candidate", {"id": cand["id"], "strategy": strategy, "status": "repairing", "attempt": attempts})
+                ctx.send(
+                    "candidate", {"id": cand["id"], "strategy": strategy, "status": "repairing", "attempt": attempts}
+                )
                 with ctx.span("node", "repair", attempt=attempts) as rs:
                     ctx.set_io(rs, {"problem": problem, "hints": hints})
-                    sql = await _repair(ctx, payload, strategy if strategy != "cache" else "direct", cand["sql"] or sql, problem or "", hints)
+                    sql = await _repair(
+                        ctx,
+                        payload,
+                        strategy if strategy != "cache" else "direct",
+                        cand["sql"] or sql,
+                        problem or "",
+                        hints,
+                    )
         except BudgetExceeded as e:
             cand["status"], cand["error"] = "error", str(e)
             return {"candidates": [cand], "stop": "budget_exceeded"} if not cand.get("rows") else {"candidates": [cand]}
@@ -214,8 +249,14 @@ async def sql_candidate(payload: dict, config: RunnableConfig) -> dict:
         span.attributes.update({"status": cand["status"], "repairs": cand["repairs"], "rows": cand["row_count"]})
     ctx.send(
         "candidate",
-        {"id": cand["id"], "strategy": strategy, "status": cand["status"], "row_count": cand["row_count"],
-         "repairs": cand["repairs"], "error": (cand["error"] or "")[:200] or None},
+        {
+            "id": cand["id"],
+            "strategy": strategy,
+            "status": cand["status"],
+            "row_count": cand["row_count"],
+            "repairs": cand["repairs"],
+            "error": (cand["error"] or "")[:200] or None,
+        },
     )
     return {"candidates": [cand]}
 
@@ -238,7 +279,11 @@ def _schema_hint(db: Database, error: str) -> str:
     if m:
         name = m.group(1).split(".")[-1].strip('"`').lower()
         owners = [f"{t.name}.{c.name}" for t in db.tables.values() for c in t.columns if name in c.name.lower()]
-        return f"Columns with a similar name: {', '.join(owners[:8])}" if owners else "Use only columns listed in <schema>."
+        return (
+            f"Columns with a similar name: {', '.join(owners[:8])}"
+            if owners
+            else "Use only columns listed in <schema>."
+        )
     m = re.search(r"no such table: ([\w.\"`]+)", error)
     if m:
         return f"Tables in this database: {', '.join(db.table_names)}"

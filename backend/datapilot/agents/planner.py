@@ -34,8 +34,11 @@ async def input_guard(state: DPState, config: RunnableConfig) -> dict:
     with ctx.span("guard", "input_guard") as sp:
         if len(q) > get_settings().max_question_chars:
             sp.status = "blocked"
-            return {"status": "blocked", "answer": "That question is too long. Please keep it under 1,000 characters.",
-                    "input_verdict": {"action": "block", "patterns": ["too_long"]}}
+            return {
+                "status": "blocked",
+                "answer": "That question is too long. Please keep it under 1,000 characters.",
+                "input_verdict": {"action": "block", "patterns": ["too_long"]},
+            }
         verdict = await check_input(q)
         ctx.set_io(sp, {"chars": len(q)}, verdict.as_dict())
         if verdict.source == "prompt_guard":
@@ -43,7 +46,9 @@ async def input_guard(state: DPState, config: RunnableConfig) -> dict:
             sp.provider = "groq"
         if verdict.action == "block":
             sp.status = "blocked"
-            ctx.send("step", {"node": "input_guard", "status": "blocked", "label": "Question blocked by the input guard"})
+            ctx.send(
+                "step", {"node": "input_guard", "status": "blocked", "label": "Question blocked by the input guard"}
+            )
             return {"status": "blocked", "answer": verdict.reason, "input_verdict": verdict.as_dict()}
     return {"input_verdict": verdict.as_dict(), "notes": []}
 
@@ -84,7 +89,9 @@ async def planner(state: DPState, config: RunnableConfig) -> dict:
     )
     with ctx.span("node", "planner") as sp:
         try:
-            out = await complete_model(ctx, "planner", prof.prompts["planner"], prompt, PlanOut, kinds=["main", "fast"], max_tokens=600)
+            out = await complete_model(
+                ctx, "planner", prof.prompts["planner"], prompt, PlanOut, kinds=["main", "fast"], max_tokens=600
+            )
         except BudgetExceeded:
             return {"stop": "budget_exceeded"}
         except LLMUnavailable as e:
@@ -100,7 +107,11 @@ async def planner(state: DPState, config: RunnableConfig) -> dict:
     wants_clarify = out.needs_clarification or out.confidence < threshold
     options = [o.strip() for o in out.options if o and o.strip()][:4]
     if wants_clarify and len(options) >= 2 and not clarification and ctx.flags.get("clarify", True):
-        meta = {"confidence": out.confidence, "clarify_question": out.clarify_question or "Which one do you mean?", "options": options}
+        meta = {
+            "confidence": out.confidence,
+            "clarify_question": out.clarify_question or "Which one do you mean?",
+            "options": options,
+        }
         return {"plan_meta": meta, "plan": []}
 
     steps = [s.model_dump() for s in out.steps][: int(prof.p("max_plan_steps", 4))] or single
@@ -109,15 +120,28 @@ async def planner(state: DPState, config: RunnableConfig) -> dict:
 
 
 def _plan_update(ctx, steps: list[dict], meta: dict) -> dict:  # type: ignore[no-untyped-def]
-    ctx.send("plan", {"steps": [{"goal": s["goal"], "needs_sql": s.get("needs_sql", True),
-                                  "needs_analysis": s.get("needs_analysis", False)} for s in steps]})
+    ctx.send(
+        "plan",
+        {
+            "steps": [
+                {
+                    "goal": s["goal"],
+                    "needs_sql": s.get("needs_sql", True),
+                    "needs_analysis": s.get("needs_analysis", False),
+                }
+                for s in steps
+            ]
+        },
+    )
     return {"plan": steps, "plan_meta": meta, "step_idx": 0, "step_results": [], "candidates": "__reset__"}
 
 
 async def clarify(state: DPState, config: RunnableConfig) -> dict:
     """Human checkpoint: pause until the user picks an option (or types their own)."""
     meta = state.get("plan_meta") or {}
-    choice = interrupt({"type": "clarify", "question": meta.get("clarify_question"), "options": meta.get("options", [])})
+    choice = interrupt(
+        {"type": "clarify", "question": meta.get("clarify_question"), "options": meta.get("options", [])}
+    )
     ctx = ctx_of(config)
     with ctx.span("human", "clarify") as sp:
         ctx.set_io(sp, {"options": meta.get("options")}, {"choice": choice})

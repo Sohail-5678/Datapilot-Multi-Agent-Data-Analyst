@@ -12,6 +12,10 @@ import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import sqlglot
+from sqlglot import exp
+from sqlglot.errors import ParseError, TokenError
+
 from datapilot.sql.executor import open_readonly
 
 _SCAN = re.compile(r"^SCAN (?:TABLE )?([\w\"`\[\]]+)", re.IGNORECASE)
@@ -40,8 +44,29 @@ def _clean(name: str) -> str:
     return name.strip('"`[]')
 
 
+def _alias_map(sql: str) -> dict[str, list[str]]:
+    """Alias (or name) → table names. Modern SQLite plans name a table by its alias ("SCAN a")."""
+    try:
+        tree = sqlglot.parse_one(sql, read="sqlite")
+    except (ParseError, TokenError):
+        return {}
+    out: dict[str, list[str]] = {}
+    for t in tree.find_all(exp.Table):
+        if t.name:
+            out.setdefault(t.alias_or_name.lower(), []).append(t.name)
+    return out
+
+
 def estimate_cost(path: Path, sql: str, table_rows: dict[str, int]) -> CostEstimate:
     rows_by_name = {k.lower(): v for k, v in table_rows.items()}
+    aliases = _alias_map(sql)
+
+    def resolve(name: str) -> tuple[str, int]:
+        # An alias reused for different tables in different subqueries: assume the biggest (conservative).
+        names = aliases.get(name.lower()) or [name]
+        best = max(names, key=lambda n: rows_by_name.get(n.lower(), 0))
+        return best, rows_by_name.get(best.lower(), 0)
+
     est = CostEstimate()
     try:
         conn = open_readonly(path)
@@ -61,13 +86,11 @@ def estimate_cost(path: Path, sql: str, table_rows: dict[str, int]) -> CostEstim
         m = _SCAN.match(detail)
         auto = _AUTO.match(detail)
         if m and "CONSTANT ROW" not in detail.upper():
-            table = _clean(m.group(1))
-            n = rows_by_name.get(table.lower(), 0)
+            table, n = resolve(_clean(m.group(1)))
             est.scans.append({"table": table, "rows": n, "detail": detail})
             est.scanned_rows += n
         elif auto:
-            table = _clean(auto.group(1))
-            n = rows_by_name.get(table.lower(), 0)
+            table, n = resolve(_clean(auto.group(1)))
             est.unindexed_join = True
             est.scans.append({"table": table, "rows": n, "detail": detail})
             est.scanned_rows += n

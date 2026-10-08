@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from typing import Any
 
 import sqlglot
 from sqlglot import exp
@@ -197,22 +198,56 @@ def _int_literal(node: exp.Expression | None) -> int | None:
     return None
 
 
+def _conjuncts(node: Any) -> list[exp.Expression]:
+    """Top-level AND terms of a condition (a term inside an OR doesn't constrain every row)."""
+    if node is None:
+        return []
+    if isinstance(node, exp.Where | exp.Paren):
+        return _conjuncts(node.this)
+    if isinstance(node, exp.And):
+        return _conjuncts(node.left) + _conjuncts(node.right)
+    return [node]
+
+
+def _set_members(node: Any) -> list[exp.Expression]:
+    if isinstance(node, exp.Union | exp.Intersect | exp.Except):
+        return _set_members(node.left) + _set_members(node.right)
+    if isinstance(node, exp.Subquery):
+        return _set_members(node.this)
+    return [node]
+
+
+def _is_bound(term: exp.Expression) -> bool:
+    """`col < N`, `col <= N`, `N > col`, `N >= col` or `col BETWEEN a AND N` with N ≤ the depth limit."""
+    if isinstance(term, exp.LT | exp.LTE):
+        col, lit = term.this, _int_literal(term.expression)
+    elif isinstance(term, exp.GT | exp.GTE):
+        col, lit = term.expression, _int_literal(term.this)
+    elif isinstance(term, exp.Between):
+        col, lit = term.this, _int_literal(term.args.get("high"))
+    else:
+        return False
+    return lit is not None and lit <= RECURSIVE_DEPTH_LIMIT and col.find(exp.Column) is not None
+
+
 def _check_recursive(root: exp.Expression) -> str | None:
     for with_ in root.find_all(exp.With):
         if not with_.args.get("recursive"):
             continue
         for cte in with_.expressions:
             inner = cte.this
-            bounded = False
-            for cmp in inner.find_all(exp.LT, exp.LTE):
-                lit = _int_literal(cmp.expression)
-                if lit is not None and lit <= RECURSIVE_DEPTH_LIMIT:
-                    bounded = True
-            if inner.args.get("limit") is not None:
-                lit = _int_literal(inner.args["limit"].expression)
-                bounded = bounded or (lit is not None and lit <= RECURSIVE_DEPTH_LIMIT)
-            if not bounded:
-                return f"Recursive CTEs need an explicit bound ≤ {RECURSIVE_DEPTH_LIMIT} (e.g. WHERE n < 100)."
+            name = cte.alias_or_name.lower()
+            limit = inner.args.get("limit")
+            lit = _int_literal(limit.expression) if limit is not None else None
+            if lit is not None and 0 <= lit <= RECURSIVE_DEPTH_LIMIT:
+                continue  # LIMIT on the CTE body caps the rows it can produce
+            # Every recursive member (a SELECT that reads the CTE itself) needs a bound that applies to all rows:
+            # a top-level AND term of its WHERE (not inside an OR, the anchor, or the select list).
+            for member in _set_members(inner):
+                if not any(t.name.lower() == name for t in member.find_all(exp.Table)):
+                    continue  # anchor member
+                if not any(_is_bound(t) for t in _conjuncts(member.args.get("where"))):
+                    return f"Recursive CTEs need an explicit bound ≤ {RECURSIVE_DEPTH_LIMIT} (e.g. WHERE n < 100)."
     return None
 
 
@@ -223,7 +258,9 @@ def _check_cross_joins(root: exp.Expression, table_rows: dict[str, int]) -> str 
         from_ = select.args.get("from") or select.args.get("from_")
         base = from_.this if from_ is not None else None
         for j in joins:
-            unconditioned = not j.args.get("on") and not j.args.get("using")
+            # sqlglot turns a bare `JOIN t` into `ON TRUE`; an ON without any column (TRUE, 1 = 1) is a cross join too.
+            on = j.args.get("on")
+            unconditioned = (on is None or on.find(exp.Column) is None) and not j.args.get("using")
             kind = (j.args.get("kind") or "").upper() if isinstance(j.args.get("kind"), str) else ""
             if not unconditioned or kind in ("NATURAL",) or j.args.get("method"):
                 continue
@@ -243,7 +280,9 @@ def _check_cross_joins(root: exp.Expression, table_rows: dict[str, int]) -> str 
 
 def _where_links(where: exp.Expression, table: exp.Table) -> bool:
     alias = (table.alias_or_name or "").lower()
-    for eq in where.find_all(exp.EQ):
+    for eq in _conjuncts(where):  # `a.x = b.x OR 1 = 1` does not link the tables
+        if not isinstance(eq, exp.EQ):
+            continue
         cols = [c for c in eq.find_all(exp.Column)]
         tables = {(c.table or "").lower() for c in cols}
         if len(cols) >= 2 and alias in tables and len(tables) >= 2:

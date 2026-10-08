@@ -217,7 +217,9 @@ async def embed_query(text: str) -> list[float] | None:
         return None
 
 
-def rank_columns(db: Database, query: str, k: int = 25, query_vec: list[float] | None = None) -> list[tuple[str, str, float]]:
+def rank_columns(
+    db: Database, query: str, k: int = 25, query_vec: list[float] | None = None
+) -> list[tuple[str, str, float]]:
     idx = get_index(db)
     lex = _bm25(idx, query)
     mx = max(lex) or 1.0

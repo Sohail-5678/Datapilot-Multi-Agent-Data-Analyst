@@ -23,7 +23,75 @@ MAX_DISTINCT = 50_000
 MAX_AVG_LEN = 60
 MIN_SCORE = 88
 STOPWORDS = set(
-    ["a", "an", "and", "are", "as", "at", "be", "by", "did", "do", "does", "for", "from", "has", "have", "how", "i", "in", "is", "it", "its", "many", "me", "most", "much", "of", "on", "or", "show", "the", "their", "them", "there", "these", "this", "to", "was", "were", "what", "when", "where", "which", "who", "why", "with", "each", "per", "vs", "versus", "than", "top", "best", "worst", "average", "total", "number", "count", "list", "give", "tell", "find", "all", "any", "between", "during", "over", "under"]
+    [
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "by",
+        "did",
+        "do",
+        "does",
+        "for",
+        "from",
+        "has",
+        "have",
+        "how",
+        "i",
+        "in",
+        "is",
+        "it",
+        "its",
+        "many",
+        "me",
+        "most",
+        "much",
+        "of",
+        "on",
+        "or",
+        "show",
+        "the",
+        "their",
+        "them",
+        "there",
+        "these",
+        "this",
+        "to",
+        "was",
+        "were",
+        "what",
+        "when",
+        "where",
+        "which",
+        "who",
+        "why",
+        "with",
+        "each",
+        "per",
+        "vs",
+        "versus",
+        "than",
+        "top",
+        "best",
+        "worst",
+        "average",
+        "total",
+        "number",
+        "count",
+        "list",
+        "give",
+        "tell",
+        "find",
+        "all",
+        "any",
+        "between",
+        "during",
+        "over",
+        "under",
+    ]
 )
 
 
@@ -36,7 +104,13 @@ class ValueLink:
     score: float
 
     def as_dict(self) -> dict:
-        return {"table": self.table, "column": self.column, "value": self.value, "matched": self.matched, "score": round(self.score, 1)}
+        return {
+            "table": self.table,
+            "column": self.column,
+            "value": self.value,
+            "matched": self.matched,
+            "score": round(self.score, 1),
+        }
 
 
 @dataclass
@@ -62,7 +136,7 @@ def build_value_index(db: Database) -> DbValues:
     try:
         for table in db.tables.values():
             for col in table.columns:
-                if not col.is_text or col.name.lower().endswith(("id", "url", "_api_id")):
+                if col.pii or not col.is_text or col.name.lower().endswith(("id", "url", "_api_id")):
                     continue
                 try:
                     n, avg = conn.execute(
@@ -88,7 +162,9 @@ def build_value_index(db: Database) -> DbValues:
     finally:
         conn.close()
     out.build_ms = int((time.perf_counter() - start) * 1000)
-    log.info("value index %s: %d values in %d columns, %d ms", db.db_id, len(out.choices), out.columns_indexed, out.build_ms)
+    log.info(
+        "value index %s: %d values in %d columns, %d ms", db.db_id, len(out.choices), out.columns_indexed, out.build_ms
+    )
     _index[db.db_id] = out
     return out
 
@@ -135,7 +211,10 @@ def link_values(db: Database, question: str, limit: int = 12) -> list[ValueLink]
     # Drop single-word matches that are contained in a longer exact match on the same column
     pruned: list[ValueLink] = []
     for v in links:
-        if any(p.column == v.column and p.table == v.table and v.value.lower() in p.value.lower() and p.value != v.value for p in pruned):
+        if any(
+            p.column == v.column and p.table == v.table and v.value.lower() in p.value.lower() and p.value != v.value
+            for p in pruned
+        ):
             continue
         pruned.append(v)
     return pruned[:limit]

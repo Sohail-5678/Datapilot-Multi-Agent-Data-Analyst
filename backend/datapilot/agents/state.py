@@ -28,6 +28,11 @@ def merge_candidates(left: list[dict] | None, right: list[dict] | str | None) ->
     return out
 
 
+def keep_first_stop(left: str | None, right: str | None) -> str | None:
+    """Parallel candidates can both hit the budget in the same step; keep the first stop reason."""
+    return left or right
+
+
 class DPState(TypedDict, total=False):
     run_id: str
     thread_id: str
@@ -54,7 +59,7 @@ class DPState(TypedDict, total=False):
     grounding: dict | None
     confirmed: bool
     status: str  # success | blocked | needs_human | budget_exceeded | quota_exhausted | error | cancelled
-    stop: str | None  # set when a budget/quota/cancel stops the pipeline early
+    stop: Annotated[str | None, keep_first_stop]  # set when a budget/quota/cancel stops the pipeline early
     notes: list[str]
 
 

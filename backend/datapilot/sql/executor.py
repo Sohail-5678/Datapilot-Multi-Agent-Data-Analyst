@@ -106,7 +106,9 @@ def execute_readonly(
         except sqlite3.Error as e:
             ms = int((time.perf_counter() - start) * 1000)
             if timed_out:
-                return ExecResult(False, error=f"Query timed out after {timeout_s:.0f} s.", duration_ms=ms, timed_out=True)
+                return ExecResult(
+                    False, error=f"Query timed out after {timeout_s:g} s.", duration_ms=ms, timed_out=True
+                )
             return ExecResult(False, error=f"{type(e).__name__}: {e}", duration_ms=ms)
         truncated = len(raw) > row_cap
         rows = [[_json_safe(v) for v in r] for r in raw[:row_cap]]

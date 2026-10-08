@@ -14,7 +14,16 @@ import uuid
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import interrupt
 
-from datapilot.agents.state import DPState, current_step, ctx_of, database_for, extract_python, last_result, rows_for_prompt, tag
+from datapilot.agents.state import (
+    DPState,
+    ctx_of,
+    current_step,
+    database_for,
+    extract_python,
+    last_result,
+    rows_for_prompt,
+    tag,
+)
 from datapilot.config import get_settings
 from datapilot.llm.router import LLMUnavailable, complete
 from datapilot.sql.executor import execute_readonly
@@ -53,10 +62,17 @@ async def analyst(state: DPState, config: RunnableConfig) -> dict:
     data_ref = src["data_ref"] + "-full"
     if data_ref not in ctx.data:
         base = src.get("unlimited_sql") or src["sql"]
-        full = await asyncio.to_thread(
-            execute_readonly, ctx.db_path or db.path, f"{base}\nLIMIT {s.sandbox_max_rows}",
-            timeout_s=s.sql_timeout_s, row_cap=s.sandbox_max_rows,
-        ) if src.get("unlimited_sql") else None
+        full = (
+            await asyncio.to_thread(
+                execute_readonly,
+                ctx.db_path or db.path,
+                f"{base}\nLIMIT {s.sandbox_max_rows}",
+                timeout_s=s.sql_timeout_s,
+                row_cap=s.sandbox_max_rows,
+            )
+            if src.get("unlimited_sql")
+            else None
+        )
         if full is not None and full.ok:
             ctx.data[data_ref] = {"columns": full.columns, "rows": full.rows, "total_rows": len(full.rows)}
         else:
@@ -69,22 +85,34 @@ async def analyst(state: DPState, config: RunnableConfig) -> dict:
             tag("question", state["question"] + (f"\nAnalysis goal: {step.get('goal')}" if step.get("goal") else "")),
             f"`data` has {len(data['rows'])} rows and columns: {', '.join(data['columns'])}",
             tag("rows", rows_for_prompt(db, data["columns"], data["rows"], limit=8)),
-            (tag("previous_attempt", f"{prev.get('code')}\n\nError:\n{prev.get('error')}") if attempts and prev.get("error") else ""),
+            (
+                tag("previous_attempt", f"{prev.get('code')}\n\nError:\n{prev.get('error')}")
+                if attempts and prev.get("error")
+                else ""
+            ),
         )
         if x
     )
     with ctx.span("node", "analyst", attempt=attempts + 1) as sp:
         try:
-            res = await complete(ctx, "analyst", ctx.profile.prompts["analyst"], prompt, kinds=["main", "fast"], max_tokens=700)
+            res = await complete(
+                ctx, "analyst", ctx.profile.prompts["analyst"], prompt, kinds=["main", "fast"], max_tokens=700
+            )
         except BudgetExceeded:
             return {"stop": "budget_exceeded"}
         except LLMUnavailable as e:
-            return {"analysis": {"ok": False, "skipped": True, "error": f"No model available for analysis ({str(e)[:80]})."}}
+            return {
+                "analysis": {"ok": False, "skipped": True, "error": f"No model available for analysis ({str(e)[:80]})."}
+            }
         code = extract_python(res.text)
         ctx.set_io(sp, None, {"code": code})
     problem = precheck(code)
     if problem:
-        return {"analysis": {"ok": False, "code": code, "error": problem}, "analysis_attempts": attempts + 1, "sandbox": None}
+        return {
+            "analysis": {"ok": False, "code": code, "error": problem},
+            "analysis_attempts": attempts + 1,
+            "sandbox": None,
+        }
     req = {"request_id": uuid.uuid4().hex[:12], "code": code, "data_ref": data_ref, "rows": len(data["rows"])}
     return {"sandbox": req, "analysis_attempts": attempts + 1}
 
@@ -101,7 +129,11 @@ async def sandbox_call(state: DPState, config: RunnableConfig) -> dict:
         sp.status = "ok" if ok else "error"
         sp.error = None if ok else str((result or {}).get("error"))[:300]
         sp.duration_ms = int((result or {}).get("duration_ms") or 0)
-        ctx.set_io(sp, {"code": req["code"]}, {"result": (result or {}).get("result"), "stdout": ((result or {}).get("stdout") or "")[:500]})
+        ctx.set_io(
+            sp,
+            {"code": req["code"]},
+            {"result": (result or {}).get("result"), "stdout": ((result or {}).get("stdout") or "")[:500]},
+        )
     analysis = {
         "ok": ok,
         "code": req["code"],

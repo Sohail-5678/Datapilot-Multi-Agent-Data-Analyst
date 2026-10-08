@@ -58,14 +58,22 @@ async def thread_history(thread_id: str) -> list[dict]:
     return [{"question": r["question"], "sql": r["chosen_sql"]} for r in rows if r["status"] == "success"][-3:]
 
 
-async def create_run(run_id: str, thread_id: str, user_id: str, db_id: str, question: str, profile_version: str) -> None:
+async def create_run(
+    run_id: str, thread_id: str, user_id: str, db_id: str, question: str, profile_version: str
+) -> None:
     s = get_settings()
 
     def fn(conn):  # type: ignore[no-untyped-def]
         conn.execute(
             runs.insert().values(
-                id=run_id, thread_id=thread_id, user_id=user_id, db_id=db_id, question=question, status="running",
-                profile_version=profile_version, agent_version=s.git_sha,
+                id=run_id,
+                thread_id=thread_id,
+                user_id=user_id,
+                db_id=db_id,
+                question=question,
+                status="running",
+                profile_version=profile_version,
+                agent_version=s.git_sha,
             )
         )
         title = question if len(question) <= 80 else question[:77] + "…"
@@ -81,15 +89,33 @@ def _detail(out: RunOutcome) -> dict:
     st = out.state
     steps = []
     for r in st.get("step_results") or []:
-        steps.append({k: r.get(k) for k in ("step_idx", "goal", "sql", "row_count", "truncated", "confidence", "reasons",
-                                             "data_ref", "candidates", "ok", "columns")})
+        steps.append(
+            {
+                k: r.get(k)
+                for k in (
+                    "step_idx",
+                    "goal",
+                    "sql",
+                    "row_count",
+                    "truncated",
+                    "confidence",
+                    "reasons",
+                    "data_ref",
+                    "candidates",
+                    "ok",
+                    "columns",
+                )
+            }
+        )
     a = st.get("analysis") or None
     return {
         "plan": st.get("plan") or [],
         "plan_meta": st.get("plan_meta") or {},
         "clarification": st.get("clarification"),
         "steps": steps,
-        "analysis": {k: a.get(k) for k in ("ok", "code", "result", "stdout", "error", "duration_ms", "ran_in", "rows")} if a else None,
+        "analysis": {k: a.get(k) for k in ("ok", "code", "result", "stdout", "error", "duration_ms", "ran_in", "rows")}
+        if a
+        else None,
         "notes": st.get("notes") or [],
         "input_verdict": st.get("input_verdict"),
         "end_state": out.end_state,
@@ -128,7 +154,11 @@ async def finish_run(h: RunHandle, out: RunOutcome) -> None:
         for r in results:
             conn.execute(
                 run_results.insert().values(
-                    run_id=h.run_id, data_ref=r["data_ref"], columns=r["columns"], rows=r["rows"][:1000], total_rows=r["row_count"]
+                    run_id=h.run_id,
+                    data_ref=r["data_ref"],
+                    columns=r["columns"],
+                    rows=r["rows"][:1000],
+                    total_rows=r["row_count"],
                 )
             )
 
@@ -140,7 +170,9 @@ async def finish_run(h: RunHandle, out: RunOutcome) -> None:
 
 async def fail_run(run_id: str, error: str) -> None:
     def fn(conn):  # type: ignore[no-untyped-def]
-        conn.execute(runs.update().where(runs.c.id == run_id).values(status="error", answer=None, detail={"error": error[:500]}))
+        conn.execute(
+            runs.update().where(runs.c.id == run_id).values(status="error", answer=None, detail={"error": error[:500]})
+        )
 
     try:
         await run_db(fn)
@@ -153,7 +185,11 @@ async def get_run(run_id: str) -> dict | None:
         r = conn.execute(select(runs).where(runs.c.id == run_id)).first()
         if not r:
             return None
-        spans = conn.execute(select(run_spans.c.span).where(run_spans.c.run_id == run_id).order_by(run_spans.c.id)).scalars().all()
+        spans = (
+            conn.execute(select(run_spans.c.span).where(run_spans.c.run_id == run_id).order_by(run_spans.c.id))
+            .scalars()
+            .all()
+        )
         fb = conn.execute(select(feedback).where(feedback.c.run_id == run_id)).first()
         return {**dict(r._mapping), "spans": list(spans), "feedback": dict(fb._mapping) if fb else None}
 
@@ -180,7 +216,11 @@ async def save_feedback(run_id: str, thumbs: int, comment: str | None) -> None:
 
 async def audit(actor: str, action: str, target: str, details: dict | None = None) -> None:
     try:
-        await run_db(lambda c: c.execute(audit_log.insert().values(actor=actor, action=action, target=target, details=details or {})))
+        await run_db(
+            lambda c: c.execute(
+                audit_log.insert().values(actor=actor, action=action, target=target, details=details or {})
+            )
+        )
     except Exception:  # noqa: BLE001
         log.warning("audit write failed")
 

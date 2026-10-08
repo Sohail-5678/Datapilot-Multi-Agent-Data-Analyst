@@ -1,0 +1,171 @@
+# BIRD Mini-Dev benchmark (SPEC §13.1, §13.4). Free on public repos (GitHub-hosted runners, 6 h/job).
+#  - workflow_dispatch: run one ablation config on one split of bench/subset_150.jsonl, resumable across runs.
+#  - nightly: the 40-question regression subset (drawn from val) with C4.
+# Results are uploaded as an artifact and summarised in the job summary. No commits, no PRs.
+# Secrets: GROQ_API_KEY_BENCH (preferred; a separate Groq org keeps live traffic's quota intact) or
+# GROQ_API_KEY, and GEMINI_API_KEY. Model ids / budgets can be overridden with repository variables.
+name: bench
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: "Ablation config"
+        type: choice
+        options: [C0, C1, C2, C3, C4]
+        default: C0
+      split:
+        description: "Split of bench/subset_150.jsonl (test is the reported one; never tune on it)"
+        type: choice
+        options: [test, val, train, all]
+        default: test
+      limit:
+        description: "Score only the first N questions of the split (0 = all)"
+        type: string
+        default: "0"
+      budget_calls:
+        description: "Stop after N real provider requests this run (0 = no cap)"
+        type: string
+        default: "400"
+  schedule:
+    - cron: "23 7 * * *" # nightly regression (07:23 UTC)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench # one benchmark at a time: they share the free-tier quota
+  cancel-in-progress: false
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY_BENCH || secrets.GROQ_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      FAKE_LLM: "false"
+      APP_ENV: ci
+      BIRD_DIR: ${{ github.workspace }}/bench/.bird
+      # Daily ledger for this throwaway runner (the provider's own daily cap still stops the run cleanly).
+      DAILY_BUDGET_FAST_REQUESTS: ${{ vars.BENCH_FAST_REQUESTS || '900' }}
+      DAILY_BUDGET_FAST_TOKENS: ${{ vars.BENCH_FAST_TOKENS || '180000' }}
+      DAILY_BUDGET_MAIN_REQUESTS: ${{ vars.BENCH_MAIN_REQUESTS || '450' }}
+      DAILY_BUDGET_LITE_REQUESTS: ${{ vars.BENCH_LITE_REQUESTS || '900' }}
+      MAIN_MODEL: ${{ vars.MAIN_MODEL || 'gemini-3-flash-preview' }}
+      LITE_MODEL: ${{ vars.LITE_MODEL || 'gemini-3.1-flash-lite-preview' }}
+      FAST_MODEL: ${{ vars.FAST_MODEL || 'qwen/qwen3.8-27b' }}
+      INPUT_CONFIG: ${{ inputs.config }}
+      INPUT_SPLIT: ${{ inputs.split }}
+      INPUT_LIMIT: ${{ inputs.limit }}
+      INPUT_BUDGET: ${{ inputs.budget_calls }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sandbox/package-lock.json
+
+      - name: Install backend + sandbox dependencies
+        run: |
+          (cd backend && uv sync --frozen)
+          (cd sandbox && npm ci --no-audit --no-fund)
+
+      - name: Restore BIRD Mini-Dev archive
+        id: bird
+        uses: actions/cache/restore@v4
+        with:
+          path: bench/.bird/minidev.zip
+          key: bird-minidev-zip-v1
+
+      - name: Download BIRD Mini-Dev (first run only)
+        if: steps.bird.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p bench/.bird
+          curl -fL --retry 4 --retry-delay 10 -o bench/.bird/minidev.zip \
+            https://bird-bench.oss-cn-beijing.aliyuncs.com/minidev.zip
+          ls -lh bench/.bird/minidev.zip
+
+      - name: Cache BIRD Mini-Dev archive
+        if: steps.bird.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: bench/.bird/minidev.zip
+          key: bird-minidev-zip-v1
+
+      - name: Extract the SQLite databases
+        run: |
+          unzip -q -o bench/.bird/minidev.zip 'minidev/MINIDEV/*' -d bench/.bird
+          rm -rf bench/.bird/__MACOSX
+          test -f bench/.bird/minidev/MINIDEV/mini_dev_sqlite.json
+          ls bench/.bird/minidev/MINIDEV/dev_databases
+          python3 bench/build_subset.py --bird-dir bench/.bird
+          git diff --exit-code bench/subset_150.jsonl bench/splits.json bench/regression_40.jsonl \
+            || { echo "::error::the committed subset differs from a fresh build"; exit 1; }
+
+      - name: Pick the run
+        id: run
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "args=--config C4 --subset ../bench/regression_40.jsonl --split all --budget-calls 600" >> "$GITHUB_OUTPUT"
+            echo "state=nightly-C4" >> "$GITHUB_OUTPUT"
+            echo "resume=" >> "$GITHUB_OUTPUT"
+          else
+            case "$INPUT_CONFIG" in C0|C1|C2|C3|C4) ;; *) echo "bad config"; exit 1;; esac
+            case "$INPUT_SPLIT" in test|val|train|all) ;; *) echo "bad split"; exit 1;; esac
+            [[ "$INPUT_LIMIT" =~ ^[0-9]+$ ]] || { echo "limit must be a number"; exit 1; }
+            [[ "$INPUT_BUDGET" =~ ^[0-9]+$ ]] || { echo "budget_calls must be a number"; exit 1; }
+            echo "args=--config $INPUT_CONFIG --split $INPUT_SPLIT --limit $INPUT_LIMIT --budget-calls $INPUT_BUDGET" >> "$GITHUB_OUTPUT"
+            echo "state=dispatch-$INPUT_CONFIG-$INPUT_SPLIT" >> "$GITHUB_OUTPUT"
+            echo "resume=--resume" >> "$GITHUB_OUTPUT"
+          fi
+
+      # LLM response cache (reruns are free) + partial results (dispatch runs resume across nights).
+      - name: Restore benchmark state
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            bench/.llm_cache
+            bench/.state
+          key: bench-state-${{ steps.run.outputs.state }}-${{ github.run_id }}
+          restore-keys: |
+            bench-state-${{ steps.run.outputs.state }}-
+            bench-state-
+
+      - name: Run the benchmark
+        working-directory: backend
+        run: |
+          if [ -z "$GROQ_API_KEY" ] && [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::set GROQ_API_KEY_BENCH (or GROQ_API_KEY) and GEMINI_API_KEY repository secrets"; exit 1
+          fi
+          mkdir -p ../bench/.state/results
+          uv run --frozen python -m datapilot.bench ${{ steps.run.outputs.args }} ${{ steps.run.outputs.resume }} \
+            --bird-dir "$BIRD_DIR" --results-dir ../bench/.state/results --summary ../bench/.state/summary.json
+
+      - name: Save benchmark state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            bench/.llm_cache
+            bench/.state
+          key: bench-state-${{ steps.run.outputs.state }}-${{ github.run_id }}
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-${{ steps.run.outputs.state }}-${{ github.run_id }}
+          path: |
+            bench/.state/results/*.json
+            bench/.state/summary.json
+          if-no-files-found: warn
+          retention-days: 30

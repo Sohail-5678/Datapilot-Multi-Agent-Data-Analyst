@@ -56,15 +56,21 @@ FROM g ORDER BY revenue_2012 DESC LIMIT 5""",
         "SELECT preferred_foot, ROUND(AVG(overall_rating), 2) AS avg_overall_rating, COUNT(*) AS snapshots "
         "FROM Player_Attributes WHERE preferred_foot IS NOT NULL GROUP BY preferred_foot ORDER BY avg_overall_rating DESC",
     ),
-    (re.compile(r"artists?.*tracks|tracks.*artists?", re.I),
-     "SELECT ar.Name AS artist, COUNT(*) AS tracks FROM Track t JOIN Album al ON al.AlbumId = t.AlbumId "
-     "JOIN Artist ar ON ar.ArtistId = al.ArtistId GROUP BY ar.Name ORDER BY tracks DESC LIMIT 10"),
-    (re.compile(r"publisher", re.I),
-     "SELECT p.publisher_name, COUNT(*) AS heroes FROM superhero s JOIN publisher p ON p.id = s.publisher_id "
-     "GROUP BY p.publisher_name ORDER BY heroes DESC LIMIT 10"),
-    (re.compile(r"monthly sales|sales.*month", re.I),
-     "SELECT strftime('%Y-%m', InvoiceDate) AS month, ROUND(SUM(Total), 2) AS sales FROM Invoice "
-     "WHERE strftime('%Y', InvoiceDate) = '2013' GROUP BY month ORDER BY month"),
+    (
+        re.compile(r"artists?.*tracks|tracks.*artists?", re.I),
+        "SELECT ar.Name AS artist, COUNT(*) AS tracks FROM Track t JOIN Album al ON al.AlbumId = t.AlbumId "
+        "JOIN Artist ar ON ar.ArtistId = al.ArtistId GROUP BY ar.Name ORDER BY tracks DESC LIMIT 10",
+    ),
+    (
+        re.compile(r"publisher", re.I),
+        "SELECT p.publisher_name, COUNT(*) AS heroes FROM superhero s JOIN publisher p ON p.id = s.publisher_id "
+        "GROUP BY p.publisher_name ORDER BY heroes DESC LIMIT 10",
+    ),
+    (
+        re.compile(r"monthly sales|sales.*month", re.I),
+        "SELECT strftime('%Y-%m', InvoiceDate) AS month, ROUND(SUM(Total), 2) AS sales FROM Invoice "
+        "WHERE strftime('%Y', InvoiceDate) = '2013' GROUP BY month ORDER BY month",
+    ),
 ]
 
 
@@ -82,30 +88,92 @@ def _default(step: str, system: str, prompt: str) -> str:
     q = _tag(prompt, "question")
     if step == "planner":
         if re.search(r"\bbest\b", q, re.I) and "already clarified" not in prompt:
-            return json.dumps({"needs_clarification": True, "clarify_question": '"Best players" could mean different things. Which one?',
-                               "options": ["Highest overall rating", "Highest potential", "Most appearances"], "confidence": 0.4, "steps": []})
+            return json.dumps(
+                {
+                    "needs_clarification": True,
+                    "clarify_question": '"Best players" could mean different things. Which one?',
+                    "options": ["Highest overall rating", "Highest potential", "Most appearances"],
+                    "confidence": 0.4,
+                    "steps": [],
+                }
+            )
         if re.search(r"correlation", q, re.I):
-            return json.dumps({"needs_clarification": False, "confidence": 0.9, "steps": [
-                {"goal": "Fetch track length and price for every track", "needs_sql": True, "needs_analysis": False, "needs_chart": False},
-                {"goal": "Compute the Pearson correlation between length and price", "needs_sql": False, "needs_analysis": True, "needs_chart": False},
-            ]})
-        return json.dumps({"needs_clarification": False, "confidence": 0.9,
-                           "steps": [{"goal": q.split("\n")[0], "needs_sql": True, "needs_analysis": False, "needs_chart": True}]})
+            return json.dumps(
+                {
+                    "needs_clarification": False,
+                    "confidence": 0.9,
+                    "steps": [
+                        {
+                            "goal": "Fetch track length and price for every track",
+                            "needs_sql": True,
+                            "needs_analysis": False,
+                            "needs_chart": False,
+                        },
+                        {
+                            "goal": "Compute the Pearson correlation between length and price",
+                            "needs_sql": False,
+                            "needs_analysis": True,
+                            "needs_chart": False,
+                        },
+                    ],
+                }
+            )
+        return json.dumps(
+            {
+                "needs_clarification": False,
+                "confidence": 0.9,
+                "steps": [{"goal": q.split("\n")[0], "needs_sql": True, "needs_analysis": False, "needs_chart": True}],
+            }
+        )
     if step == "schema_prune":
         tables = re.findall(r"^([\w]+): (.*)$", _tag(prompt, "schema"), re.M)
-        return json.dumps({"tables": [{"name": t, "columns": [c.split(" (")[0] for c in cols.split("; ")], "reason": "fake"} for t, cols in tables[:8]]})
+        return json.dumps(
+            {
+                "tables": [
+                    {"name": t, "columns": [c.split(" (")[0] for c in cols.split("; ")], "reason": "fake"}
+                    for t, cols in tables[:8]
+                ]
+            }
+        )
     if step in ("sql_direct", "sql_plan", "sql_fewshot", "repair"):
         return f"```sql\n{_sql_for(prompt)}\n```"
     if step == "verifier":
         ids = re.findall(r"Candidate (\S+) \(", prompt)
-        return json.dumps({"chosen": ids[0] if ids else "", "passes": True, "issues": [], "reason": "Columns and filters match the question."})
+        return json.dumps(
+            {
+                "chosen": ids[0] if ids else "",
+                "passes": True,
+                "issues": [],
+                "reason": "Columns and filters match the question.",
+            }
+        )
     if step == "analyst":
         return "```python\nr = data.iloc[:, 0].corr(data.iloc[:, 1])\nresult = {'pearson_r': round(float(r), 4), 'n': int(len(data))}\nprint(result)\n```"
     if step == "chart":
-        header = _tag(prompt, "rows").split("\n")[0].split("\t")
+        lines = _tag(prompt, "rows").split("\n")
+        header = lines[0].split("\t")
+        first = lines[1].split("\t") if len(lines) > 1 else []
+        numeric_first = bool(first) and first[0].replace(".", "", 1).lstrip("-").isdigit()
+        if len(header) >= 2 and numeric_first:
+            return json.dumps(
+                {
+                    "mark": "point",
+                    "encoding": {
+                        "x": {"field": header[0], "type": "quantitative"},
+                        "y": {"field": header[1], "type": "quantitative"},
+                    },
+                }
+            )
         if len(header) >= 2:
-            return json.dumps({"mark": "bar", "encoding": {"y": {"field": header[0], "type": "nominal", "sort": "-x"},
-                                                           "x": {"field": header[1], "type": "quantitative"}}})
+            return json.dumps(
+                {
+                    "mark": "bar",
+                    "encoding": {
+                        "y": {"field": header[0], "type": "nominal", "sort": "-x"},
+                        "x": {"field": header[1], "type": "quantitative"},
+                    },
+                }
+            )
         return json.dumps({"no_chart": True})
     if step == "narrator":
         analysis = _tag(prompt, "analysis")

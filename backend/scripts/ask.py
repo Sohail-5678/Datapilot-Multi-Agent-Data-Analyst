@@ -1,5 +1,5 @@
 """Ask one question from the command line (dev tool). Usage:
-  uv run python scripts/ask.py chinook "Which 5 genres made the most revenue in 2012?" [--auto run|cancel|pick_first]
+uv run python scripts/ask.py chinook "Which 5 genres made the most revenue in 2012?" [--auto run|cancel|pick_first]
 """
 
 from __future__ import annotations
@@ -32,7 +32,9 @@ async def main() -> None:
         print(f"  · {event}: {json.dumps(data, default=str)[:300]}")
 
     async def on_interrupt(p: dict):  # type: ignore[no-untyped-def]
-        print(f"  ⏸ interrupt {p['type']}: {json.dumps({k: v for k, v in p.items() if k != 'code'}, default=str)[:300]}")
+        print(
+            f"  ⏸ interrupt {p['type']}: {json.dumps({k: v for k, v in p.items() if k != 'code'}, default=str)[:300]}"
+        )
         if p["type"] == "clarify":
             return p["options"][0]
         if p["type"] == "confirm":
