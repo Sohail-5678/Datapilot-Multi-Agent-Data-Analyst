@@ -20,6 +20,8 @@ Ask a business question in plain English. A team of agents plans it, links it to
 |---|---|---|
 | ![database catalog](docs/screenshots/databases.jpg) | ![architecture](docs/screenshots/about.jpg) | ![mobile landing](docs/screenshots/landing-mobile.jpg) |
 
+> **New to the project?** Read the field guide: [`docs/DataPilot-Field-Guide.html`](docs/DataPilot-Field-Guide.html) — the idea, one question traced through every agent, every screen, safety layers, benchmarks, tools and interview prep.
+
 > Demo databases only (Chinook + four BIRD Mini-Dev databases), all read-only. The free API server sleeps after 15 idle minutes, so the first question can take about a minute while it wakes up; the UI says so.
 
 ---

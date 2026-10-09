@@ -1,0 +1,1040 @@
+<title>DataPilot Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a field guide — sticky chapter index on the left, one readable column of prose with wide figures that break out. */
+:root {
+  --bg: #ecebe4;
+  --surface: #f7f5ef;
+  --sunk: #e3e1d8;
+  --ink: #1b1e4a;
+  --ink-2: #3a3c62;
+  --muted: #5d5c56;
+  --line: rgba(27, 30, 74, 0.14);
+  --line-strong: rgba(27, 30, 74, 0.28);
+  --accent: #c2121a;
+  --accent-soft: rgba(194, 18, 26, 0.08);
+  --stone: #afaea2;
+  --good: #1f5c46;
+  --good-soft: rgba(31, 92, 70, 0.1);
+  --warn: #8a5a00;
+  --warn-soft: rgba(176, 120, 0, 0.12);
+  --code-bg: #1b1e4a;
+  --code-ink: #ece9e0;
+  --display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --body: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1131; --surface: #181b45; --sunk: #0b0d27; --ink: #eeebe3; --ink-2: #d4d2c8; --muted: #b4b3a8;
+    --line: rgba(175, 174, 162, 0.16); --line-strong: rgba(175, 174, 162, 0.32); --accent: #f0444a; --accent-soft: rgba(240, 68, 74, 0.13);
+    --good: #7fd1ae; --good-soft: rgba(127, 209, 174, 0.12); --warn: #f2c46b; --warn-soft: rgba(242, 196, 107, 0.12);
+    --code-bg: #0b0d27; --code-ink: #ece9e0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1131; --surface: #181b45; --sunk: #0b0d27; --ink: #eeebe3; --ink-2: #d4d2c8; --muted: #b4b3a8;
+  --line: rgba(175, 174, 162, 0.16); --line-strong: rgba(175, 174, 162, 0.32); --accent: #f0444a; --accent-soft: rgba(240, 68, 74, 0.13);
+  --good: #7fd1ae; --good-soft: rgba(127, 209, 174, 0.12); --warn: #f2c46b; --warn-soft: rgba(242, 196, 107, 0.12);
+  --code-bg: #0b0d27; --code-ink: #ece9e0; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+a:hover { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.shell { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 56px; max-width: 1280px; margin: 0 auto; padding-inline: 28px; padding-block: 0 96px; }
+@media (max-width: 980px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 0; padding-inline: 16px; } }
+
+/* chapter index */
+.toc { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; max-height: 100vh; overflow-y: auto; padding-block: 36px 24px; scrollbar-width: thin; }
+.toc .brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 600; letter-spacing: 0.3em; font-size: 15px; }
+.toc .brand svg { width: 13px; height: 13px; color: var(--accent); }
+.toc p.label { margin: 26px 0 10px; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; counter-reset: ch; }
+.toc li { counter-increment: ch; }
+.toc a { display: grid; grid-template-columns: 26px 1fr; gap: 6px; padding: 5px 8px; border-radius: 8px; text-decoration: none; font-size: 13.5px; color: var(--muted); line-height: 1.35; }
+.toc a::before { content: counter(ch, decimal-leading-zero); font-family: var(--mono); font-size: 10.5px; padding-top: 2px; color: var(--stone); }
+.toc a:hover { background: var(--surface); color: var(--ink); }
+.toc a.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: inset 2px 0 0 var(--accent); }
+.toc a.on::before { color: var(--accent); }
+@media (max-width: 980px) {
+  .toc { position: static; max-height: none; padding-block: 24px 8px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+
+main { min-width: 0; padding-block: 36px 0; }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+
+/* hero */
+.hero { padding-block: 24px 40px; border-bottom: 1px solid var(--line); }
+.hero h1 { font-family: var(--display); font-weight: 600; font-size: clamp(44px, 7vw, 76px); line-height: 1; letter-spacing: -0.01em; margin: 14px 0 0; text-wrap: balance; }
+.hero h1 em { color: var(--accent); font-weight: 500; }
+.hero .lede { font-size: 19px; line-height: 1.6; max-width: 62ch; color: var(--ink-2); margin: 22px 0 0; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-top: 32px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.facts div { background: var(--surface); padding: 14px 16px; }
+.facts b { display: block; font-family: var(--display); font-size: 28px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.facts span { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.links { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 22px; font-size: 14px; }
+.links code { font-family: var(--mono); font-size: 13px; }
+
+/* sections */
+section.ch { padding-block: 56px 8px; border-bottom: 1px solid var(--line); scroll-margin-top: 12px; }
+section.ch > header { margin-bottom: 18px; }
+section.ch > header .label { color: var(--accent); }
+h2 { font-family: var(--display); font-weight: 600; font-size: clamp(32px, 4.4vw, 44px); line-height: 1.08; margin: 8px 0 0; text-wrap: balance; }
+h3 { font-family: var(--display); font-weight: 600; font-size: 25px; line-height: 1.2; margin: 34px 0 6px; text-wrap: balance; }
+h4 { font-size: 15px; font-weight: 700; margin: 22px 0 4px; }
+p, ul, ol { max-width: 68ch; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 1.2em; margin: 10px 0; }
+li { margin: 5px 0; }
+li::marker { color: var(--accent); }
+strong { font-weight: 700; }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--sunk); padding: 1px 6px; border-radius: 5px; }
+.small { font-size: 14px; color: var(--muted); }
+
+pre.code { background: var(--code-bg); color: var(--code-ink); padding: 16px 18px; border-radius: 14px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.6; max-width: 100%; }
+pre.code code { background: none; padding: 0; color: inherit; }
+pre.code .c { color: #8f8e83; }
+pre.code .k { color: #ff8a8e; }
+pre.code .s { color: #d9d6c8; }
+
+figure { margin: 22px 0; min-width: 0; }
+figure.wide { margin-inline: 0; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; max-width: 70ch; }
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; overflow-x: auto; }
+.diagram pre.mermaid { margin: 0; background: transparent; font-family: var(--body); text-align: center; }
+
+.callout { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 16px 18px; margin: 18px 0; max-width: 72ch; }
+.callout.key { border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-soft); }
+.callout.good { border-color: color-mix(in srgb, var(--good) 40%, transparent); background: var(--good-soft); }
+.callout .label { display: block; margin-bottom: 4px; }
+.callout p { margin: 6px 0; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; margin: 18px 0; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--sunk); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td code { white-space: nowrap; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 18px 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; min-width: 0; }
+.card h4 { margin: 0 0 4px; font-family: var(--display); font-size: 21px; font-weight: 600; }
+.card .meta { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.card p { margin: 6px 0 0; font-size: 14.5px; }
+.card dl { margin: 10px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: 13.5px; }
+.card dt { color: var(--muted); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding-top: 3px; }
+.card dd { margin: 0; min-width: 0; }
+
+/* agent steps — a real sequence, so numbered */
+.steps { list-style: none; padding: 0; margin: 20px 0; display: grid; gap: 12px; max-width: none; counter-reset: st; }
+.steps > li { counter-increment: st; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 0; }
+.steps > li::before { content: counter(st, decimal-leading-zero); font-family: var(--display); font-style: italic; font-size: 26px; color: var(--accent); line-height: 1; padding-top: 2px; }
+.steps h4 { margin: 0; font-family: var(--display); font-size: 21px; }
+.steps p { margin: 4px 0 0; font-size: 14.5px; }
+.steps .io { margin-top: 8px; font-family: var(--mono); font-size: 12px; background: var(--sunk); border-radius: 8px; padding: 8px 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+
+/* app tour schematic */
+.mock { border: 1px solid var(--line-strong); border-radius: 16px; overflow: hidden; background: var(--surface); }
+.mock .bar { display: flex; align-items: center; gap: 18px; padding: 10px 16px; border-bottom: 1px solid var(--line); font-family: var(--display); letter-spacing: 0.24em; font-size: 12px; flex-wrap: wrap; }
+.mock .bar span:first-child { font-weight: 700; }
+.mock .body { display: grid; grid-template-columns: 210px minmax(0, 1fr); min-height: 340px; }
+@media (max-width: 640px) { .mock .body { grid-template-columns: 1fr; } }
+.mock .side { border-right: 1px solid var(--line); padding: 14px; display: grid; gap: 10px; align-content: start; background: var(--bg); }
+.mock .mainp { padding: 14px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.blk { position: relative; border: 1px dashed var(--line-strong); border-radius: 10px; padding: 9px 12px 9px 36px; font-size: 13px; color: var(--ink-2); background: var(--surface); }
+.blk.solid { border-style: solid; }
+.blk .n { position: absolute; left: 9px; top: 9px; width: 19px; height: 19px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--mono); font-size: 10.5px; display: grid; place-items: center; font-weight: 500; }
+.tabsrow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.tabsrow span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+.tabsrow span.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.legend { list-style: none; padding: 0; display: grid; gap: 10px; max-width: none; }
+.legend li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; margin: 0; }
+.legend .n { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--mono); font-size: 11px; display: grid; place-items: center; margin-top: 2px; }
+
+/* job section */
+.bullets { list-style: none; padding: 0; display: grid; gap: 10px; max-width: none; }
+.bullets li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 0; font-size: 14.5px; }
+button.copy { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--line-strong); background: transparent; color: var(--ink); border-radius: 999px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
+button.copy:hover { border-color: var(--accent); color: var(--accent); }
+details.qa { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0; margin: 10px 0; max-width: 76ch; }
+details.qa summary { cursor: pointer; padding: 12px 16px; font-weight: 600; list-style: none; display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+details.qa summary::-webkit-details-marker { display: none; }
+details.qa summary::after { content: "+"; font-family: var(--mono); color: var(--accent); }
+details.qa[open] summary::after { content: "−"; }
+details.qa .a { padding: 0 16px 14px; font-size: 14.5px; }
+details.qa .a p { margin: 6px 0; }
+
+.checklist { list-style: none; padding: 0; display: grid; gap: 8px; max-width: none; }
+.checklist li { margin: 0; }
+.checklist label { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; font-size: 14.5px; }
+.checklist input { width: 16px; height: 16px; margin-top: 3px; accent-color: var(--accent); }
+.checklist .day { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); display: block; }
+.progress { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; margin: 18px 0; }
+.tools .card ul { padding-left: 1.1em; margin: 8px 0 0; font-size: 14px; }
+.tools .card li { margin: 4px 0; }
+
+.swatches { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.sw { width: 150px; border-radius: 8px; padding: 14px; min-height: 110px; display: flex; flex-direction: column; justify-content: flex-end; font-family: var(--display); font-size: 18px; box-shadow: 0 0 0 4px var(--surface), 0 0 0 5px var(--line); }
+.sw small { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; margin-top: 4px; }
+
+footer.end { padding-block: 40px 0; color: var(--muted); font-size: 13.5px; }
+</style>
+
+<div class="shell">
+  <aside class="toc" aria-label="Chapters">
+    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c.6 6.2 5.8 11.4 12 12-6.2.6-11.4 5.8-12 12-.6-6.2-5.8-11.4-12-12C6.2 11.4 11.4 6.2 12 0Z" fill="currentColor"/></svg>DATAPILOT</div>
+    <p class="label">Field guide · chapters</p>
+    <ol id="toc">
+      <li><a href="#idea">The idea in one minute</a></li>
+      <li><a href="#why">Why this project exists</a></li>
+      <li><a href="#concepts">Concepts you need first</a></li>
+      <li><a href="#journey">One question, start to finish</a></li>
+      <li><a href="#architecture">How the system is built</a></li>
+      <li><a href="#agents">The agent team, one by one</a></li>
+      <li><a href="#safety">Safety and trust layers</a></li>
+      <li><a href="#tour">Tour of the app, every screen</a></li>
+      <li><a href="#yourdata">Your data: uploads</a></li>
+      <li><a href="#models">Models, routing and cost</a></li>
+      <li><a href="#data">The databases</a></li>
+      <li><a href="#bench">Benchmarks and evaluation</a></li>
+      <li><a href="#tests">Tests and CI</a></li>
+      <li><a href="#deploy">Deployment at $0</a></li>
+      <li><a href="#repo">Repository map</a></li>
+      <li><a href="#tools">Every tool used</a></li>
+      <li><a href="#design">The Vélora design</a></li>
+      <li><a href="#job">How this gets you hired</a></li>
+      <li><a href="#interview">Interview questions</a></li>
+      <li><a href="#study">7-day mastery plan</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+  </aside>
+
+  <main id="main">
+    <div class="hero">
+      <p class="label">Field guide · October 2026 · for Ameer</p>
+      <h1>DataPilot, <em>explained from zero.</em></h1>
+      <p class="lede">DataPilot answers business questions about databases in plain English. A team of AI agents plans the question, writes and cross-checks the SQL, runs it safely, draws a chart, and writes an answer in which every number is checked against the real data. This guide walks through what it does, how each piece works, every screen of the app, every tool used, and how to talk about it in an AI engineering interview.</p>
+      <div class="facts">
+        <div><b>10</b><span>specialist agents</span></div>
+        <div><b>3</b><span>SQL strategies vote</span></div>
+        <div><b>485</b><span>backend tests</span></div>
+        <div><b>48.0%</b><span>baseline EX on BIRD</span></div>
+        <div><b>$0</b><span>monthly hosting</span></div>
+      </div>
+      <div class="links">
+        <span>Live app: <a href="https://datapilot-analyst.vercel.app">datapilot-analyst.vercel.app</a></span>
+        <span>Code: <a href="https://github.com/Sohail-5678/Datapilot-Multi-Agent-Data-Analyst">github.com/Sohail-5678/Datapilot-Multi-Agent-Data-Analyst</a></span>
+        <span>Spec: <code>docs/SPEC.md</code></span>
+      </div>
+    </div>
+
+    <!-- 01 -->
+    <section class="ch" id="idea">
+      <header><p class="label">Chapter 01</p><h2>The idea in one minute</h2></header>
+      <p>Most of a company's important numbers live in databases. To get them out you have to write <strong>SQL</strong>, the language databases speak. Most business people can't, so they wait for an analyst.</p>
+      <p>Large language models (LLMs) like Gemini can write SQL from an English question. The naive version of this, called <strong>text-to-SQL</strong>, is one prompt that says "here is the database layout, write SQL for this question". It works often, but it fails in ways that are dangerous for business decisions:</p>
+      <ul>
+        <li>It picks the wrong table or misspells a value (<code>'Marvel'</code> instead of <code>'Marvel Comics'</code>) and returns nothing or the wrong rows.</li>
+        <li>It writes SQL that runs but answers a slightly different question.</li>
+        <li>When it writes the final sentence, it can invent a number that was never in the data.</li>
+        <li>Nothing stops it from writing <code>DELETE</code> or running a query that scans millions of rows.</li>
+      </ul>
+      <div class="callout key">
+        <span class="label">The one-sentence pitch</span>
+        <p>DataPilot replaces "one model makes a guess" with "a team of specialists that plan, double-check each other, run things safely, and prove every number", and it measures how much each specialist helps on a public benchmark.</p>
+      </div>
+      <h3>An analogy that sticks</h3>
+      <p>Think of a small consulting team that gets a question from a manager:</p>
+      <ul>
+        <li>A <strong>lead</strong> reads the question and decides the steps, or asks "what do you mean by best?" if it is vague.</li>
+        <li>A <strong>librarian</strong> finds which tables and columns matter and how values are spelled.</li>
+        <li>Three <strong>analysts</strong> each write their own SQL in their own style.</li>
+        <li>A <strong>compliance officer</strong> refuses anything that isn't a safe read-only query.</li>
+        <li>A <strong>reviewer</strong> compares the three results. If two agree, that is strong evidence. The reviewer also checks the SQL actually answers the question.</li>
+        <li>A <strong>statistician</strong> runs Python for things like correlations, in a sealed sandbox.</li>
+        <li>A <strong>designer</strong> draws the chart, and a <strong>writer</strong> drafts the answer.</li>
+        <li>A <strong>fact-checker</strong> verifies every number in the answer against the results and deletes any it can't verify.</li>
+      </ul>
+      <p>That team is exactly what the code builds, using a framework called LangGraph to connect the agents.</p>
+    </section>
+
+    <!-- 02 -->
+    <section class="ch" id="why">
+      <header><p class="label">Chapter 02</p><h2>Why this project exists</h2></header>
+      <h3>The product reason</h3>
+      <p>Companies are building "data agents" right now: chat interfaces over their warehouses. The hard part is not getting an LLM to produce SQL; it is making the answer <em>trustworthy</em> enough that a manager can act on it. DataPilot is a working, open, measured version of what those products do internally: verification, safety, human checkpoints and evaluation.</p>
+      <h3>The career reason</h3>
+      <p>It was designed as a portfolio project for AI Engineer and Forward Deployed Engineer roles. Hiring managers for those roles look for four things, and this project shows all four with evidence instead of claims:</p>
+      <div class="grid2">
+        <div class="card"><h4>Multi-agent orchestration</h4><p>A supervised LangGraph graph with parallel branches, retries, human-in-the-loop pauses and stop rules.</p></div>
+        <div class="card"><h4>Harness engineering</h4><p>Timeouts, budgets, fallbacks between model providers, sandboxed code execution, read-only enforcement, graceful degradation.</p></div>
+        <div class="card"><h4>Evaluation</h4><p>A public benchmark (BIRD Mini-Dev), an ablation design, confidence intervals, cost per question, a test suite with hundreds of cases.</p></div>
+        <div class="card"><h4>Shipping</h4><p>A deployed, polished product with auth, rate limits, privacy rules and real users' data, at zero cost.</p></div>
+      </div>
+      <h3>Where it fits: a trio of projects</h3>
+      <p>DataPilot is one of three connected specs. <strong>DataPilot</strong> (data questions) and <strong>ReturnPilot</strong> (e-commerce returns) are agents. <strong>AgentForge</strong> is a planned platform that evaluates, red-teams and optimizes both. They share three contracts so they can work together:</p>
+      <ul>
+        <li><code>trace.v1</code>: the format every run records (which agent did what, which model, how many tokens, how long).</li>
+        <li><code>profile.v1</code>: the versioned bundle of prompts and routing that AgentForge is allowed to tune. Safety rules are locked out of it.</li>
+        <li><code>case.v1</code>: the format of a test case, including red-team "seed overrides" such as rows containing prompt-injection text.</li>
+      </ul>
+    </section>
+
+    <!-- 03 -->
+    <section class="ch" id="concepts">
+      <header><p class="label">Chapter 03</p><h2>Concepts you need first</h2></header>
+      <p>Read these once; every later chapter uses them. A longer glossary is at the end.</p>
+      <div class="grid2">
+        <div class="card"><h4>Database, table, schema</h4><p>A database is a set of tables (like spreadsheets). The <strong>schema</strong> is the layout: table names, column names, types and how tables link (foreign keys). DataPilot uses <strong>SQLite</strong>, a database that lives in a single file.</p></div>
+        <div class="card"><h4>SQL</h4><p>The query language. <code>SELECT genre, SUM(total) FROM … GROUP BY genre</code> reads data. Other statements (<code>INSERT</code>, <code>DELETE</code>, <code>DROP</code>) change it, which DataPilot must never do.</p></div>
+        <div class="card"><h4>LLM</h4><p>A large language model: predicts text. Here: Google Gemini (Flash, Flash-Lite) and Qwen 27B served by Groq. LLMs are called through APIs and paid per <strong>token</strong> (roughly ¾ of a word).</p></div>
+        <div class="card"><h4>Agent</h4><p>An LLM given one job, specific inputs, and tools or code around it. A <strong>multi-agent</strong> system wires several agents together so each does one thing well.</p></div>
+        <div class="card"><h4>LangGraph</h4><p>A Python framework for building agent workflows as a <strong>graph</strong>: nodes are steps, edges decide what runs next. It supports parallel branches (<code>Send</code>) and pausing for a human (<code>interrupt()</code>).</p></div>
+        <div class="card"><h4>Self-consistency (voting)</h4><p>Generate several answers independently and trust the one most of them agree on. Here: compare the <em>result rows</em> of different SQL queries, not the SQL text.</p></div>
+        <div class="card"><h4>Grounding</h4><p>Making sure what the model says is supported by real data. DataPilot's output guard checks every number in the answer against the query results.</p></div>
+        <div class="card"><h4>Sandbox</h4><p>A sealed place to run untrusted code. Model-written Python runs in <strong>Pyodide</strong> (Python compiled to WebAssembly) inside the visitor's browser, with network access removed.</p></div>
+        <div class="card"><h4>Benchmark and EX</h4><p><strong>BIRD Mini-Dev</strong> is a public set of 500 questions with correct SQL. <strong>Execution accuracy (EX)</strong> = the share of questions where our SQL returns the same rows as the correct SQL.</p></div>
+        <div class="card"><h4>Ablation</h4><p>Turn features on one at a time and measure each one's effect. It tells you which agent is worth its cost.</p></div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section class="ch" id="journey">
+      <header><p class="label">Chapter 04</p><h2>One question, start to finish</h2></header>
+      <p>This is the most important chapter. If you can explain this walkthrough from memory, you understand the project. The question is the demo one, asked on the Chinook music-store database:</p>
+      <div class="callout"><span class="label">The question</span><p><strong>"Which 5 genres made the most revenue in 2012, and how did each change vs 2011?"</strong></p></div>
+
+      <figure class="wide">
+        <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  participant U as Browser
+  participant W as Vercel web app
+  participant A as FastAPI API
+  participant G as Agent graph
+  participant DB as Read-only SQLite
+  U->>W: POST ask (question)
+  W->>A: same request + 5-minute signed token
+  A->>G: start run (background task)
+  G-->>U: SSE event: plan
+  G->>G: schema linker picks tables
+  par two SQL candidates in parallel
+    G->>DB: guarded SELECT (direct)
+    G->>DB: guarded SELECT (plan then SQL)
+  end
+  DB-->>G: rows + result hashes
+  G-->>U: SSE: chosen SQL, confidence High
+  G-->>U: SSE: table rows, chart spec
+  G->>G: narrator writes, grounding guard checks numbers
+  G-->>U: SSE: answer text, grounding OK, done
+</pre>
+        </div>
+        <figcaption>A question flows from the browser through the web app's proxy to the API, which runs the agent graph and streams progress back as Server-Sent Events (SSE).</figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li><div><h4>The browser sends the question</h4><p>The workspace posts the question to <code>/api/v1/threads/&lt;id&gt;/ask</code> on the Vercel web app. The web app checks your login, mints a <strong>5-minute signed token</strong> (ES256 JWT) and forwards the request to the API on Render. The token proves who you are without the browser ever holding a secret.</p></div></li>
+        <li><div><h4>The API starts a run and opens a live stream</h4><p>FastAPI checks the token, your rate limit and the daily AI quota, then starts the agent graph as a background task. The response is a <strong>Server-Sent Events</strong> stream: the browser receives events like <code>plan</code>, <code>step</code>, <code>candidate</code>, <code>chosen</code>, <code>table</code>, <code>chart</code>, <code>token</code>, <code>grounding</code>, <code>done</code> as they happen. That is why you see "Agents at work" update live.</p></div></li>
+        <li><div><h4>Input guard</h4><p>The question is checked for prompt-injection attempts ("ignore your instructions…") with Meta's <strong>Llama Prompt Guard 2</strong> classifier on Groq plus regex rules. This one is fine, so it passes.</p></div></li>
+        <li><div><h4>Planner</h4><p>Flash-Lite reads a compact summary of the database and returns a JSON plan. Here it produces one step, because one SQL query can compute both years and the change.</p><div class="io">{"needs_clarification": false, "confidence": 0.9,
+ "steps": [{"goal": "Compute total revenue per genre for 2011 and 2012, rank by 2012 revenue, return the top 5 with the change", "needs_sql": true, "needs_chart": true}]}</div></div></li>
+        <li><div><h4>Schema linker</h4><p>Chinook is small (64 columns), so the whole schema goes to the SQL agents, written as compact <code>CREATE TABLE</code> text with sample values. For big databases it ranks columns (BM25 keyword search plus Gemini embeddings), finds join paths through foreign keys, fuzzy-matches literal values in the question (for example "Lewis Hamilton" maps to <code>drivers.forename/surname</code>), and prunes to at most 8 tables and 40 columns.</p></div></li>
+        <li><div><h4>Two SQL candidates in parallel</h4><p>LangGraph's <code>Send</code> launches two branches at once: the <strong>direct</strong> strategy and the <strong>plan-then-SQL</strong> strategy, both on Qwen 27B (fast, about 0.3 to 1 second each). Each branch runs its own mini-pipeline: generate SQL, pass the <strong>SQL guard</strong>, estimate cost with <code>EXPLAIN QUERY PLAN</code>, execute on a <strong>read-only</strong> connection, and repair up to 2 times on an error or a suspicious empty result.</p><div class="io">SELECT g.Name AS Genre,
+  SUM(CASE WHEN strftime('%Y', i.InvoiceDate)='2012' THEN il.UnitPrice*il.Quantity ELSE 0 END) AS Rev2012, …
+FROM InvoiceLine il JOIN Invoice i … JOIN Track t … JOIN Genre g … GROUP BY g.Name ORDER BY Rev2012 DESC LIMIT 5</div></div></li>
+        <li><div><h4>Vote</h4><p>Each candidate's result rows are hashed (rows sorted, floats rounded). Both hashes match, so the two independent queries agree. If they had disagreed, the third strategy (<strong>few-shot</strong>, using similar solved examples) would run and break the tie. This is called <strong>adaptive k</strong>: it saves about a third of the calls on easy questions.</p></div></li>
+        <li><div><h4>Verifier</h4><p>An LLM reads the question, the candidate SQL and a preview of the rows and answers: do the columns, filters and grouping answer the question? It passes. Confidence becomes <strong>High</strong> (2 or more agree and the verifier passed). One agreeing candidate plus a pass is <strong>Medium</strong>; anything else is <strong>Low</strong> with a "please double-check" note.</p></div></li>
+        <li><div><h4>Chart agent</h4><p>Flash-Lite writes a small Vega-Lite chart spec (a bar chart of Rev2012 by Genre). The spec is checked against a whitelist on the server and again in the browser: no data URLs, no expressions. The browser injects the actual rows; the model never supplies data. If the spec fails, rules pick a chart instead.</p></div></li>
+        <li><div><h4>Narrator</h4><p>Writes at most 120 words using only the rows: "The top five genres by 2012 revenue were Rock ($162.36), Metal ($65.34)…".</p></div></li>
+        <li><div><h4>Output grounding guard</h4><p>Every number in the draft is extracted and must equal a value in the results, or a derivation the code computes itself (difference, percent change, ratio, sum, share), <em>at the precision it was written with</em>. A bad number gets one rewrite, then its sentence is removed and the UI says so. Here all 11 numbers check out, so the badge reads "Numbers checked against results ✓ · 11".</p></div></li>
+        <li><div><h4>Done: saved and traced</h4><p>The run, its spans (a timing record per step, in <code>trace.v1</code> format), the result rows and the answer are saved to Postgres. The browser shows the answer card with tabs. Real production numbers for this question: 6 LLM calls, about 10,500 tokens, 11 seconds, list-price cost about $0.003.</p></div></li>
+      </ol>
+
+      <div class="callout good"><span class="label">Two other paths you should know</span>
+        <p><strong>Human checkpoints.</strong> "Show me the best players" is vague, so the planner pauses the graph with LangGraph's <code>interrupt()</code> and shows clickable options. After you pick one, the SQL would scan 183,978 rows of <code>Player_Attributes</code> (above the 100,000 limit), so it pauses again: "Run this query?" with Run anyway / Narrow it down / Cancel.</p>
+        <p><strong>Python analysis.</strong> "Is there a correlation between track length and price?" makes a 2-step plan: SQL fetches the columns, then the analyst writes pandas code. The graph pauses, the <em>browser</em> runs the code in Pyodide and posts the result back, and the graph resumes. Answer: Pearson r = 0.93 across 3,503 tracks.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section class="ch" id="architecture">
+      <header><p class="label">Chapter 05</p><h2>How the system is built</h2></header>
+      <p>There are three running parts: the web app in your browser and on Vercel, the API with the agents on Render, and the databases. Plus the external AI providers.</p>
+      <figure class="wide">
+        <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  B["Browser<br/>Next.js UI<br/>Pyodide sandbox in a Web Worker<br/>Vega-Lite charts"] --> V["Vercel<br/>Auth.js login<br/>/api proxy mints signed tokens"]
+  V -- "HTTPS + JWT, SSE stream" --> API
+  B -. "direct upload with an upload-only token" .-> API
+  subgraph R["Render free web service, one Docker container"]
+    API["FastAPI<br/>auth, rate limits, run manager"] --> G["LangGraph agent team"]
+    G --> SG["SQL guard (sqlglot)"] --> EX["Read-only SQLite executor<br/>5 demo databases"]
+    G --> IDX["Value index + schema index"]
+  end
+  G --> L1["Google Gemini<br/>Flash, Flash-Lite, embeddings"]
+  G --> L2["Groq<br/>Qwen 27B, gpt-oss-120b, Prompt Guard 2"]
+  API --> PG[("Neon Postgres<br/>threads, runs, traces, caches,<br/>uploaded datasets, quota ledger")]
+</pre>
+        </div>
+        <figcaption>System diagram. Solid arrows are the normal request path; the dotted arrow is the upload path, which bypasses Vercel's 4.5 MB request limit.</figcaption>
+      </figure>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Part</th><th>Runs on</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Web app</strong></td><td>Vercel (Next.js 16)</td><td>All pages and UI. Login with Auth.js (guest or GitHub). A proxy route forwards API calls with a short-lived signed token, so the browser never sees secrets. Hosts the Pyodide worker file.</td></tr>
+          <tr><td><strong>Browser</strong></td><td>Visitor's machine</td><td>Renders charts, runs model-written Python in Pyodide inside a Web Worker, streams progress events.</td></tr>
+          <tr><td><strong>API</strong></td><td>Render (Docker, FastAPI)</td><td>Verifies tokens, enforces rate limits and quotas, runs the LangGraph agents, streams events, stores runs.</td></tr>
+          <tr><td><strong>Demo databases</strong></td><td>Inside the Docker image</td><td>Five SQLite files, read-only. Downloaded and checksum-verified at build time.</td></tr>
+          <tr><td><strong>App database</strong></td><td>Neon Postgres</td><td>Users, threads, runs, trace spans, result tables, feedback, verified-SQL cache, schema embeddings, uploaded datasets, daily usage counters, audit log.</td></tr>
+          <tr><td><strong>AI providers</strong></td><td>Google AI Studio, Groq</td><td>Free-tier LLMs and the injection classifier. Every model id is an environment variable.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>How live progress works</h3>
+      <p>A question can take 5 to 40 seconds and may pause for a human. So the API runs each question as a background task that appends events to a replayable log. The browser reads the log over SSE. If the connection drops (Vercel cuts serverless responses after a time limit), the browser reconnects with <code>GET /v1/runs/&lt;id&gt;/events?after=N</code> and continues where it left off. Pauses for clarify, confirm and the sandbox wait on a future that the matching POST endpoint resolves: humans get 15 minutes, the browser sandbox 60 seconds.</p>
+    </section>
+
+    <!-- 06 -->
+    <section class="ch" id="agents">
+      <header><p class="label">Chapter 06</p><h2>The agent team, one by one</h2></header>
+      <p>This is the actual LangGraph graph from <code>backend/datapilot/agents/graph.py</code>. Diamonds are routing decisions; the red boxes are pauses for a human or the browser.</p>
+      <figure class="wide">
+        <div class="diagram">
+<pre class="mermaid">
+flowchart TD
+  START([start]) --> IG[input_guard]
+  IG -- blocked --> RESP[respond]
+  IG --> PL[planner]
+  PL -- vague --> CL[["clarify: interrupt"]] --> PL
+  PL --> SL[schema_linker]
+  SL --> FAN{{"fan out k candidates (Send)"}}
+  FAN --> SC["sql_candidate: generate, guard, cost check, execute, repair up to 2"]
+  SC --> VO{vote}
+  VO -- disagree --> FAN
+  VO -- "over 100k rows" --> CF[["confirm: interrupt"]] --> VO
+  VO --> VE[verify]
+  VE -- needs Python --> AN[analyst] --> SB[["sandbox_call: interrupt, runs in browser"]] --> AN
+  VE --> ADV[advance]
+  SB --> ADV
+  ADV -- more plan steps --> SL
+  ADV --> CH[chart] --> NA[narrator] --> OG[output_guard] --> RESP --> END([end])
+</pre>
+        </div>
+        <figcaption>Any budget or quota stop jumps straight to the narrator with whatever has been verified so far.</figcaption>
+      </figure>
+
+      <div class="grid2">
+        <div class="card"><p class="meta">Guard · no LLM, plus a classifier</p><h4>Input guard</h4><p>Blocks prompt injection, flags SQL-injection-looking text. Blocks only when the classifier and the rules agree; otherwise it flags the question and prompts get a stricter reminder.</p><dl><dt>File</dt><dd><code>guards/input.py</code></dd></dl></div>
+        <div class="card"><p class="meta">LLM · Flash-Lite first</p><h4>Planner</h4><p>Splits the question into 1 to 4 steps, marks steps needing Python or a chart, or asks a clarifying question with 2 to 4 concrete options.</p><dl><dt>File</dt><dd><code>agents/planner.py</code></dd></dl></div>
+        <div class="card"><p class="meta">Search + LLM</p><h4>Schema linker</h4><p>BM25 and embedding search over column descriptions, fuzzy value matching (RapidFuzz), foreign-key join paths (NetworkX), pruning by Flash-Lite, similar solved examples.</p><dl><dt>File</dt><dd><code>agents/schema_linker.py</code></dd></dl></div>
+        <div class="card"><p class="meta">LLM ×2–3 · Qwen 27B</p><h4>SQL agents</h4><p>Three strategies: direct, plan-then-SQL, few-shot. Run in parallel; each repairs itself using the exact SQLite error or the closest real spellings of values.</p><dl><dt>File</dt><dd><code>agents/sql_agent.py</code></dd></dl></div>
+        <div class="card"><p class="meta">Code · no LLM</p><h4>SQL guard</h4><p>Parses with sqlglot. Allows exactly one bounded SELECT on known tables and adds <code>LIMIT 1000</code>. Rejects everything else.</p><dl><dt>File</dt><dd><code>sql/guard.py</code></dd></dl></div>
+        <div class="card"><p class="meta">Code · no LLM</p><h4>Executor</h4><p>Read-only SQLite connection, 5-second timeout, 1,000-row display cap plus a full row count, cost estimate from <code>EXPLAIN QUERY PLAN</code>.</p><dl><dt>Files</dt><dd><code>sql/executor.py</code>, <code>sql/explain.py</code></dd></dl></div>
+        <div class="card"><p class="meta">Code + LLM</p><h4>Vote and verifier</h4><p>Groups candidates by result hash, runs the third strategy on disagreement, LLM-checks the winner, assigns High/Medium/Low confidence.</p><dl><dt>File</dt><dd><code>agents/verifier.py</code></dd></dl></div>
+        <div class="card"><p class="meta">LLM + browser sandbox</p><h4>Analyst</h4><p>Writes pandas code that must assign a JSON <code>result</code>. Code is pre-checked for banned imports, then run in the browser. One fix attempt on error.</p><dl><dt>File</dt><dd><code>agents/analyst.py</code></dd></dl></div>
+        <div class="card"><p class="meta">LLM · Flash-Lite</p><h4>Chart agent</h4><p>Writes a whitelisted Vega-Lite spec (bar, line, point, area, arc), with a rule-based fallback.</p><dl><dt>File</dt><dd><code>agents/chart.py</code></dd></dl></div>
+        <div class="card"><p class="meta">LLM + code</p><h4>Narrator and output guard</h4><p>Writes the answer from the rows only; the guard checks every number and removes unsupported sentences. Only checked text is streamed.</p><dl><dt>File</dt><dd><code>agents/narrator.py</code>, <code>guards/output_grounding.py</code></dd></dl></div>
+      </div>
+
+      <h3>Budgets and stop rules (the "harness")</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Limit</th><th class="num">Value</th><th>What happens at the limit</th></tr></thead>
+        <tbody>
+          <tr><td>Plan steps per question</td><td class="num">4</td><td>Extra steps are dropped</td></tr>
+          <tr><td>SQL candidates</td><td class="num">3</td><td>Start with 2, add the 3rd only on disagreement</td></tr>
+          <tr><td>Repairs per candidate</td><td class="num">2</td><td>Candidate marked failed</td></tr>
+          <tr><td>LLM calls per question</td><td class="num">25</td><td rowspan="3">Stop and answer with what is verified so far, status <code>budget_exceeded</code></td></tr>
+          <tr><td>Tokens per question</td><td class="num">60,000</td></tr>
+          <tr><td>Wall-clock time (human waits excluded)</td><td class="num">90 s</td></tr>
+          <tr><td>Rows scanned before asking</td><td class="num">100,000</td><td>Pause with "Run this query?"</td></tr>
+          <tr><td>Rows shown</td><td class="num">1,000</td><td>Full count still reported</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 07 -->
+    <section class="ch" id="safety">
+      <header><p class="label">Chapter 07</p><h2>Safety and trust layers</h2></header>
+      <p>Interviewers love this chapter, because it shows you think about what can go wrong. Each layer is independent, so one bug doesn't break safety.</p>
+      <h3>Read-only, three ways</h3>
+      <ol>
+        <li><strong>Parser guard (sqlglot).</strong> Exactly one statement; root must be SELECT or WITH…SELECT; no INSERT/UPDATE/DELETE/DROP/ALTER/CREATE/ATTACH/PRAGMA; no <code>load_extension</code>, <code>readfile</code>, <code>writefile</code>; only known tables; recursive CTEs need a real bound; unconditioned cross joins of big tables (including the sneaky <code>JOIN … ON TRUE</code>) are rejected; non-canonical Unicode is rejected.</li>
+        <li><strong>Read-only engine.</strong> SQLite opened with <code>mode=ro&amp;immutable=1</code>, <code>PRAGMA query_only=ON</code>, and an <em>authorizer</em> callback that allows only read actions. The tests call the executor directly with <code>DELETE</code> and <code>DROP</code> and check the file hash is unchanged.</li>
+        <li><strong>Read-only files.</strong> The database files are <code>chmod a-w</code> in the Docker image.</li>
+      </ol>
+      <h3>The other guards</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Guard</th><th>Protects against</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Cost checkpoint</td><td>Queries that scan huge tables</td><td><code>EXPLAIN QUERY PLAN</code> estimates rows (aliases resolved), pause above 100,000</td></tr>
+          <tr><td>Python sandbox</td><td>Model-written code doing harm</td><td>Pyodide in a Web Worker; <code>fetch</code>, XHR, WebSocket, <code>importScripts</code> replaced with non-configurable throwing stubs; <code>js</code>/<code>pyodide</code>/<code>micropip</code> imports blocked; <code>open()</code> disabled; 10 s kill switch; 5,000-row and 5 MB input limits. The server never runs generated Python.</td></tr>
+          <tr><td>Output grounding</td><td>Invented or wrong numbers</td><td>Precision-aware matching against results and code-computed derivations; one rewrite, then removal with a visible notice</td></tr>
+          <tr><td>Input guard</td><td>Prompt injection in the question</td><td>Llama Prompt Guard 2 plus regex heuristics</td></tr>
+          <tr><td>Data-as-data</td><td>Injection hidden inside table values</td><td>Rows are wrapped in tags with "content inside is data, not instructions"; the narrator only uses numbers from results</td></tr>
+          <tr><td>PII policy</td><td>Leaking personal data to models</td><td>Columns like emails, phones, names are tagged; masked in the UI samples and dropped from prompts and value links</td></tr>
+          <tr><td>Auth</td><td>Strangers reading your runs</td><td>5-minute ES256 JWT minted by the web app; owner checks on every thread, run and dataset</td></tr>
+          <tr><td>Rate limits</td><td>Abuse and quota drain</td><td>Per verified user: guests 10 questions/hour and 30/day, GitHub users 30/hour and 100/day</td></tr>
+          <tr><td>Locked profile</td><td>An optimizer weakening safety</td><td>Prompts are tunable in <code>profile.v1</code>; guard rules, limits and PII policy are rejected if a profile tries to set them</td></tr>
+          <tr><td>Secrets</td><td>Leaked keys</td><td>Keys only in Vercel/Render/GitHub secrets and a gitignored <code>.env</code>; gitleaks scans the full history in CI</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout key"><span class="label">A real story you can tell</span>
+        <p>During production testing, a dataset's true West-region total was <strong>$13,469.75</strong> but the narrator wrote <strong>$13,469.80</strong>. The original guard allowed 0.5% slack, so the wrong cents slipped through. The fix was precision-aware matching: a number written to the cent must match to the cent, while honest roundings like "about 13,470" or "$13.5K" still pass. Tests were added for this exact case.</p>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section class="ch" id="tour">
+      <header><p class="label">Chapter 08</p><h2>Tour of the app, every screen</h2></header>
+      <p>The top navigation has four sections: <strong>Workspace</strong>, <strong>Databases</strong>, <strong>Benchmarks</strong>, <strong>About</strong>, plus a theme toggle (light warm-paper or dark midnight-navy) and your account menu.</p>
+
+      <h3>Landing page <code>/</code></h3>
+      <ul>
+        <li><strong>Hero:</strong> "Ask in plain English. Get answers you can verify." with an engraved astrolabe illustration whose stars form a rising line chart, and the "Try it, no sign-up" button that signs you in as a guest.</li>
+        <li><strong>Three example cards:</strong> navy, stone and crimson, each a different kind of thinking: a ranking with year-over-year change, a Python statistic, and a vague question that triggers clarification. Clicking one signs you in and asks it.</li>
+        <li><strong>The crew:</strong> the ten agents with one-line jobs. <strong>Guarantees:</strong> read-only, Python in your browser, every number checked. <strong>Benchmark teaser</strong> with the real numbers.</li>
+      </ul>
+
+      <h3>Sign in <code>/login</code></h3>
+      <p><strong>Try as guest</strong> creates a private guest identity (no account). <strong>Continue with GitHub</strong> appears once a GitHub OAuth app is configured; GitHub users get higher limits, and logins listed in <code>ADMIN_GITHUB_USERS</code> become admins.</p>
+
+      <h3>Workspace <code>/app</code> and <code>/app/&lt;conversation-id&gt;</code></h3>
+      <figure class="wide">
+        <div class="mock" role="img" aria-label="Schematic of the workspace with numbered regions">
+          <div class="bar"><span>✦ DATAPILOT</span><span>WORKSPACE</span><span>DATABASES</span><span>BENCHMARKS</span><span>ABOUT</span></div>
+          <div class="body">
+            <div class="side">
+              <div class="blk solid"><span class="n">1</span>Database picker · Your data / Demo databases</div>
+              <div class="blk"><span class="n">2</span>Upload your data · Delete</div>
+              <div class="blk"><span class="n">3</span>Tables tree with column types</div>
+              <div class="blk"><span class="n">4</span>Example questions</div>
+              <div class="blk"><span class="n">5</span>Recent conversations</div>
+            </div>
+            <div class="mainp">
+              <div class="blk solid"><span class="n">6</span>Database title · New conversation</div>
+              <div class="blk"><span class="n">7</span>Your question (numbered 01, 02…)</div>
+              <div class="blk"><span class="n">8</span>Plan with step status</div>
+              <div class="blk"><span class="n">9</span>Agent activity (live) + candidate chips</div>
+              <div class="blk"><span class="n">10</span>Clarify card or "Run this query?" card when paused</div>
+              <div class="blk solid"><span class="n">11</span>Answer card
+                <div class="tabsrow"><span class="on">ANSWER</span><span>TABLE</span><span>CHART</span><span>SQL</span><span>PYTHON</span><span>TRACE</span></div>
+              </div>
+              <div class="blk"><span class="n">12</span>Ask box (Enter to send)</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>The workspace. Below 1024 px wide, the left panel becomes a drawer opened with a "Schema" button.</figcaption>
+      </figure>
+      <ul class="legend">
+        <li><span class="n">1</span><div><strong>Database picker.</strong> Choose one of the five demo databases or one of your uploaded datasets (grouped as "Your data"). Under it: subtitle, table and row counts, a link to its docs page, and an expiry date for uploads.</div></li>
+        <li><span class="n">2</span><div><strong>Upload your data / Delete.</strong> Opens the upload dialog (chapter 09). Delete appears for your own datasets.</div></li>
+        <li><span class="n">3</span><div><strong>Tables tree.</strong> Expand a table to see its columns, with icons for primary key, foreign key, number or text, the type, and a PII tag for personal-data columns.</div></li>
+        <li><span class="n">4</span><div><strong>Examples.</strong> Curated questions for demo databases, AI-suggested ones for uploads. Click to ask.</div></li>
+        <li><span class="n">5</span><div><strong>Recent.</strong> Your saved conversations, titled by their first question.</div></li>
+        <li><span class="n">6</span><div><strong>Header.</strong> The current database and a <em>New conversation</em> button. A "waking up the free server" banner appears while Render starts (up to a minute after 15 idle minutes).</div></li>
+        <li><span class="n">7</span><div><strong>Your question</strong>, in large serif type with its number.</div></li>
+        <li><span class="n">8</span><div><strong>Plan.</strong> The planner's steps, each ticked when done, with a "python" tag on analysis steps.</div></li>
+        <li><span class="n">9</span><div><strong>Agent activity.</strong> A live log ("Finding relevant tables…", "2 of 2 agree → verified") and chips for each SQL candidate with row counts. It collapses into "Agent activity · 8 steps · 11 s" when finished. Screen readers hear updates through <code>aria-live</code>.</div></li>
+        <li><span class="n">10</span><div><strong>Checkpoint cards.</strong> <em>DataPilot asks</em> shows clarifying options plus "Something else…". <em>Run this query?</em> shows rows to scan, the table, a time estimate, the SQL, and Cancel / Narrow it down / Run anyway.</div></li>
+        <li><span class="n">11</span><div><strong>Answer card</strong>, described tab by tab below.</div></li>
+        <li><span class="n">12</span><div><strong>Ask box.</strong> Up to 1,000 characters. Disabled while the server is waking or another answer is running.</div></li>
+      </ul>
+
+      <h4>The answer card, tab by tab</h4>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Tab or element</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Answer</strong> (default)</td><td>The written answer in serif type, any notes, the grounding badge ("Numbers checked against results ✓ · 11" or a warning that something was removed), the sandbox badge for Python ("Ran in your browser · no network · 8 ms"), and the chart.</td></tr>
+          <tr><td><strong>Table</strong></td><td>The result rows: virtualized for speed, sticky header, type icons, numbers right-aligned, "Copy as CSV", and a note when only the first 1,000 rows are shown.</td></tr>
+          <tr><td><strong>Chart</strong></td><td>The Vega-Lite chart full size, with a text summary for screen readers.</td></tr>
+          <tr><td><strong>SQL</strong></td><td>The chosen SQL with syntax highlighting, how many candidates agreed, the confidence reasons, and <em>Edit SQL</em>: an editor that runs your own SQL through the same guard, read-only (asks before expensive scans).</td></tr>
+          <tr><td><strong>Python</strong></td><td>Only for analysis questions: the generated pandas code, the JSON result, printed output, and a note that it ran in your browser.</td></tr>
+          <tr><td><strong>Trace</strong></td><td>A waterfall of every step (agent, LLM call, tool, guard, retrieval, human, sandbox) with timings, models, tokens and redacted inputs and outputs. Links to the full trace page.</td></tr>
+          <tr><td>Confidence badge</td><td>High, Medium or Low. Hover or focus it for the reasons ("2 of 2 candidates agree · verifier passed").</td></tr>
+          <tr><td>Footer</td><td>Thumbs up or down (a thumbs-up stores the SQL in the verified cache), Run again, Edit SQL, and metrics: LLM calls, tokens, time, list-price cost.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Databases <code>/databases</code> and <code>/databases/&lt;id&gt;</code></h3>
+      <p>The catalog shows <strong>Your data</strong> (your uploads, with Ask and Delete) and the five demo databases as numbered swatch cards. A database page shows its description and source, quick "Ask" chips, an <strong>entity-relationship diagram</strong> (the most-connected table sits in the middle; dashed lines are relationships inferred from matching key names), and a column table per table with type, description, value notes and sample values. Personal-data samples are masked (<code>a•••@x.com</code>).</p>
+
+      <h3>Benchmarks <code>/benchmarks</code></h3>
+      <p>The ablation table (config, what's on, n, EX, 95% confidence interval, LLM calls, tokens and cost per question, p50/p95 latency), an EX bar chart with error bars, an accuracy-versus-cost scatter plot, EX by difficulty and by database, and a "Failures, left in" list showing gold versus predicted SQL. It only shows numbers the harness actually produced.</p>
+
+      <h3>Run trace <code>/runs/&lt;id&gt;</code></h3>
+      <p>Everything about one answer: status, confidence, profile version, metric tiles, the answer, each step's chosen SQL, a table of all candidates (strategy, model, status, rows, repairs, result hash) and the full timeline.</p>
+
+      <h3>About <code>/about</code></h3>
+      <p>The agent graph diagram, the $0 stack, why it's measured, the eight guardrails in order of defense, and how it plugs into AgentForge.</p>
+    </section>
+
+    <!-- 09 -->
+    <section class="ch" id="yourdata">
+      <header><p class="label">Chapter 09</p><h2>Your data: uploads</h2></header>
+      <p>Any signed-in visitor, guests included, can upload their own data and question it with the same agents.</p>
+      <figure class="wide">
+        <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  F["Files<br/>CSV, TSV, Excel, JSON, SQLite"] --> T["Web app mints a<br/>5-minute upload-only token"]
+  T --> U["Browser posts files<br/>straight to the API"]
+  U --> P["Parse and infer types<br/>money, percents, dates"]
+  P --> S["Rebuild safe names<br/>tag PII columns"]
+  S --> B["Build one read-only<br/>SQLite database"]
+  B --> Z["Store zlib-compressed<br/>in Neon Postgres"]
+  Z --> C["Unpack to a read-only<br/>cache file on demand"]
+  C --> Q["Ask questions with<br/>the same agent team"]
+</pre>
+        </div>
+        <figcaption>The upload pipeline. Every stage treats the file as untrusted input.</figcaption>
+      </figure>
+      <ul>
+        <li><strong>Formats:</strong> CSV, TSV, TXT (delimiter auto-detected), Excel <code>.xlsx</code> (every sheet becomes a table), JSON (array of objects), SQLite (tables only; views and triggers are never copied). Several files can go into one dataset so they can be joined.</li>
+        <li><strong>Limits:</strong> 10 MB per file, 25 MB per dataset, 200,000 rows per table, 100 columns, 12 tables. Guests keep 1 dataset for 1 day; GitHub users 3 datasets for 7 days.</li>
+        <li><strong>Type inference:</strong> a column becomes INTEGER, REAL or DATE only if every value fits. <code>$1,234.50</code> becomes 1234.5, <code>12%</code> becomes 0.12, mixed date formats become ISO dates.</li>
+        <li><strong>Privacy:</strong> uploading requires ticking a consent box, because free-tier Gemini may use prompts to improve its models. Columns that look personal are masked and never sent to the models. Datasets are private to their owner.</li>
+        <li><strong>Why the direct upload:</strong> Vercel functions accept at most 4.5 MB of request body, so the browser uploads straight to the API with a token that can only call <code>POST /v1/datasets</code>.</li>
+        <li><strong>Why store it in Postgres:</strong> Render's free disk is wiped whenever the instance sleeps, so the built database is kept compressed in Neon and unpacked when needed.</li>
+        <li><strong>Suggested questions:</strong> Flash-Lite reads the schema and proposes four questions (ranking, trend, comparison, aggregate), with a rule-based fallback.</li>
+      </ul>
+    </section>
+
+    <!-- 10 -->
+    <section class="ch" id="models">
+      <header><p class="label">Chapter 10</p><h2>Models, routing and cost</h2></header>
+      <p>DataPilot uses only free tiers. Free tiers have tight per-minute limits and unpredictable speed, so most of the engineering here is routing around those limits.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Model</th><th>Provider</th><th>Used for</th><th>Measured speed in production</th><th class="num">List price per 1M tokens (in / out)</th></tr></thead>
+        <tbody>
+          <tr><td><code>gemini-3.1-flash-lite-preview</code></td><td>Google AI Studio</td><td>Planner, verifier, narrator, analyst, few-shot SQL, schema pruning, charts, example questions</td><td>usually 1–4 s, sometimes 9–14 s</td><td class="num">$0.25 / $1.50</td></tr>
+          <tr><td><code>gemini-3-flash-preview</code></td><td>Google AI Studio</td><td>Fallback for reasoning steps</td><td>11–25 s, some 503 "high demand"</td><td class="num">$0.50 / $3.00</td></tr>
+          <tr><td><code>qwen/qwen3.8-27b</code></td><td>Groq</td><td>Direct and plan-then-SQL candidates, repairs, first fallback</td><td>0.3–1 s; 8,000 tokens/min cap</td><td class="num">~$0.29 / $0.59 (est.)</td></tr>
+          <tr><td><code>openai/gpt-oss-120b</code></td><td>Groq</td><td>Last-resort fallback, small daily share</td><td>about 1 s</td><td class="num">$0.15 / $0.60</td></tr>
+          <tr><td><code>llama-prompt-guard-2-86m</code></td><td>Groq</td><td>Prompt-injection classifier</td><td>under 0.1 s</td><td class="num">~$0.03</td></tr>
+          <tr><td><code>gemini-embedding-001</code></td><td>Google AI Studio</td><td>Embeddings for schema search and the verified cache (768 dims)</td><td>batched, paced 40 texts per 30 s</td><td class="num">$0.15 / –</td></tr>
+        </tbody>
+      </table></div>
+      <h3>How the router decides</h3>
+      <ul>
+        <li><strong>Routing comes from the profile.</strong> <code>profiles/default.json</code> (version 2) says, for each step, a primary model kind and fallbacks: reasoning steps go Flash-Lite → Qwen → Gemini Flash; SQL candidates go Qwen → Gemini Flash.</li>
+        <li><strong>Fail fast.</strong> Gemini calls time out after 9 seconds. A 5xx error or timeout skips straight to the next model instead of retrying.</li>
+        <li><strong>Per-model cooldowns.</strong> A model that was slow (over 8 s) or overloaded is skipped for 45 seconds, so a slow Flash doesn't block Flash-Lite.</li>
+        <li><strong>Rate-limit aware.</strong> On a per-minute 429 it honors the provider's <code>retry-after</code>; on a daily cap it marks that model exhausted for the day.</li>
+        <li><strong>Quota ledger.</strong> Requests and tokens per model per day are counted in Postgres. At 90% of a budget the router switches models; when all are exhausted the app goes browse-only with a clear message.</li>
+        <li><strong>Circuit breaker.</strong> Five consecutive real failures open a provider for 60 seconds.</li>
+        <li><strong>List-price cost.</strong> Each call's tokens are multiplied by the provider's published paid price, so cost is measurable even though the project pays $0.</li>
+      </ul>
+      <div class="callout"><span class="label">Why this matters in an interview</span><p>You measured that the "best" model (Gemini 3 Flash) was too slow on the free tier, changed the routing in the versioned profile instead of hard-coding it, and added timeouts and cooldowns. That's the kind of production judgment that separates an AI engineer from someone who only calls an API.</p></div>
+    </section>
+
+    <!-- 11 -->
+    <section class="ch" id="data">
+      <header><p class="label">Chapter 11</p><h2>The databases</h2></header>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Database</th><th>What's inside</th><th class="num">Tables</th><th class="num">Rows</th><th>Source and license</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Chinook</strong></td><td>Music store: artists, albums, 3,503 tracks, genres, customers, invoices 2009–2013</td><td class="num">11</td><td class="num">15,607</td><td>Luis Rocha, MIT</td></tr>
+          <tr><td><strong>Superhero</strong></td><td>Heroes, publishers, powers, attributes, alignment</td><td class="num">10</td><td class="num">10,614</td><td>BIRD Mini-Dev, CC BY-SA 4.0</td></tr>
+          <tr><td><strong>Student Club</strong></td><td>Members, events, attendance, budgets, expenses</td><td class="num">8</td><td class="num">42,511</td><td>BIRD Mini-Dev</td></tr>
+          <tr><td><strong>Formula 1</strong></td><td>Races since 1950, drivers, constructors, results, lap times</td><td class="num">13</td><td class="num">493,257</td><td>BIRD Mini-Dev (Ergast)</td></tr>
+          <tr><td><strong>European Football</strong></td><td>Leagues, teams, matches, 183,978 player-attribute snapshots</td><td class="num">7</td><td class="num">222,796</td><td>BIRD Mini-Dev (Kaggle); slimmed</td></tr>
+        </tbody>
+      </table></div>
+      <p>The football database is 584 MB originally; nulling eight XML columns of <code>Match</code> (which no benchmark question uses) brings it to 37 MB without changing the schema. All five ship as a 17 MB release asset (<code>demo-dbs-v1</code>) that <code>backend/scripts/fetch_dbs.py</code> downloads and verifies with SHA-256 checksums during the Docker build. Benchmarks always use the full original BIRD files.</p>
+      <h3>Indexes built at startup</h3>
+      <ul>
+        <li><strong>Value index:</strong> distinct values of text columns (up to 50,000 per column, about 12 MB in total) for fuzzy matching literals in questions.</li>
+        <li><strong>Schema index:</strong> a description card per column, ranked by BM25 and, when Gemini is available, by embeddings stored in Postgres.</li>
+        <li><strong>Foreign-key graph:</strong> NetworkX graph of tables for join paths, including relationships inferred from matching key names.</li>
+        <li><strong>Verified-SQL cache:</strong> High-confidence and thumbs-up answers are stored; a near-identical later question reuses the SQL as one extra candidate that still has to win the vote.</li>
+      </ul>
+    </section>
+
+    <!-- 12 -->
+    <section class="ch" id="bench">
+      <header><p class="label">Chapter 12</p><h2>Benchmarks and evaluation</h2></header>
+      <p><strong>BIRD Mini-Dev</strong> is a public text-to-SQL benchmark: 500 questions over 11 real-world databases, each with a correct ("gold") SQL query, an optional "evidence" hint, and a difficulty label.</p>
+      <ul>
+        <li><strong>Fixed subset:</strong> 150 questions, stratified by database and difficulty with seed 13 (<code>bench/subset_150.jsonl</code>).</li>
+        <li><strong>Splits:</strong> 50 train, 50 validation, 50 test. The test split is never used for tuning; few-shot examples come only from train.</li>
+        <li><strong>Metric:</strong> execution accuracy, using BIRD's official rule: the set of predicted rows equals the set of gold rows, both run on the same database file.</li>
+        <li><strong>Self-test:</strong> with the gold SQL fed in as the "prediction", the harness scores 150/150, proving the scoring path itself is correct.</li>
+      </ul>
+      <h3>The ablation design</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Config</th><th>What's turned on</th><th>Question it answers</th></tr></thead>
+        <tbody>
+          <tr><td><code>C0</code></td><td>One LLM call, full schema, evidence included</td><td>How good is the naive approach?</td></tr>
+          <tr><td><code>C1</code></td><td>+ schema and value linking</td><td>Does finding the right tables and spellings help?</td></tr>
+          <tr><td><code>C2</code></td><td>+ 3 candidates and voting</td><td>Does self-consistency help?</td></tr>
+          <tr><td><code>C3</code></td><td>+ repair loop and verifier</td><td>Does self-correction help, especially on hard questions?</td></tr>
+          <tr><td><code>C4</code></td><td>Full system with adaptive k, cache, few-shot from train</td><td>Can we keep the accuracy at lower cost?</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Result so far (real)</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Config</th><th class="num">n</th><th class="num">EX</th><th class="num">95% CI</th><th class="num">Simple</th><th class="num">Moderate</th><th class="num">Challenging</th><th class="num">Tokens / q</th><th class="num">List price / q</th><th class="num">p50</th></tr></thead>
+        <tbody><tr><td>C0 baseline (Qwen 27B)</td><td class="num">50</td><td class="num">48.0%</td><td class="num">34–62%</td><td class="num">71.4%</td><td class="num">40.0%</td><td class="num">36.4%</td><td class="num">2,244</td><td class="num">$0.0007</td><td class="num">0.93 s</td></tr></tbody>
+      </table></div>
+      <p class="small">C1–C4 are pending: free tiers allow roughly one configuration per day, so they run in resumable batches (<code>python -m datapilot.bench --config C4 --split test --resume</code>, or the nightly <code>bench.yml</code> workflow). The website never shows estimated numbers.</p>
+      <h3>The eval adapter (for AgentForge)</h3>
+      <p><code>python -m datapilot.eval_adapter run --cases cases.jsonl --profile profile.json --out results.jsonl</code> runs <code>case.v1</code> test cases on a fresh copy of the database per case, can inject red-team content (rows containing "ignore all instructions", a hidden <code>secret_tokens</code> canary table, misleading column descriptions), answers checkpoints automatically, runs Python in the Node.js Pyodide runner, and reports which guard blocked each attack.</p>
+    </section>
+
+    <!-- 13 -->
+    <section class="ch" id="tests">
+      <header><p class="label">Chapter 13</p><h2>Tests and CI</h2></header>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Suite</th><th class="num">Count</th><th>What it proves</th></tr></thead>
+        <tbody>
+          <tr><td>Backend (pytest)</td><td class="num">485</td><td>60 malicious SQL statements rejected and 60 valid ones allowed unchanged; writes refused even with the guard bypassed; timeouts; BIRD comparison; 30/30 value links; grounding (including the cents case); injection cases; every graph path (clarify, confirm, repair, tie vote, adaptive k, budget stop, fallbacks, cooldowns, sandbox); API auth, ownership, SSE format, rate limits; uploads (types, hostile names, limits, privacy, expiry, scoped tokens)</td></tr>
+          <tr><td>Sandbox (node --test)</td><td class="num">9</td><td>Network blocked, <code>js</code>/<code>micropip</code>/<code>open()</code> blocked, infinite loop killed, oversized data refused</td></tr>
+          <tr><td>Web unit (Vitest)</td><td class="num">20</td><td>SSE parser, the live-turn reducer, chart-spec whitelist, safe answer rendering, benchmark summary mapping</td></tr>
+          <tr><td>End-to-end (Playwright + axe)</td><td class="num">9</td><td>Ask → answer → chart → SQL; clarify → confirm; cancel; Python in the browser; upload → ask → delete; switching database mid-conversation; asking right after an upload; accessibility checks on key pages</td></tr>
+        </tbody>
+      </table></div>
+      <p>Tests never call real AI providers: a deterministic <strong>fake LLM</strong> (<code>llm/fake.py</code>) scripts replies per step, so every path is reproducible. GitHub Actions (<code>ci.yml</code>) runs lint, type checks, all suites, the eval-adapter smoke test, a Docker build and a full-history gitleaks secret scan on every push.</p>
+      <div class="callout"><span class="label">Bugs the tests and production checks caught</span>
+        <p>Guard bypasses with <code>JOIN … ON TRUE</code> and fake recursion bounds; aliased table scans estimated at 0 rows; a LangGraph crash when a clarify timed out; a race where a quick question after an upload went to the previous database; a per-IP rate limit that throttled every visitor together because all traffic arrives through Vercel's IPs; and the $13,469.80 grounding miss.</p>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section class="ch" id="deploy">
+      <header><p class="label">Chapter 14</p><h2>Deployment at $0</h2></header>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Service</th><th>Used for</th><th>Name here</th><th>At the free limit</th></tr></thead>
+        <tbody>
+          <tr><td>Vercel Hobby</td><td>Web app</td><td>project <code>datapilot-analyst</code></td><td>Pauses, never charges</td></tr>
+          <tr><td>Render free</td><td>API Docker container (512 MB RAM, sleeps after 15 min)</td><td>service <code>datapilot-analyst-api</code></td><td>Suspends; ~50 s cold start</td></tr>
+          <tr><td>Neon free</td><td>Postgres app database</td><td>project <code>datapilot</code></td><td>Compute pauses</td></tr>
+          <tr><td>Google AI Studio</td><td>Gemini models and embeddings</td><td>project <code>datapilot</code></td><td>HTTP 429 → fallback</td></tr>
+          <tr><td>Groq</td><td>Qwen, gpt-oss, Prompt Guard</td><td>API key</td><td>HTTP 429 → fallback</td></tr>
+          <tr><td>GitHub</td><td>Code, CI, release asset, nightly benchmarks</td><td>public repo</td><td>Free for public repos</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li><strong>API deploys</strong> automatically from <code>render.yaml</code> on every push to <code>main</code>: Docker build (installs Python packages with uv, downloads and checksums the databases, makes them read-only), then <code>alembic upgrade head</code> and one uvicorn worker.</li>
+        <li><strong>Web deploys</strong> with <code>vercel deploy --prod</code> from <code>apps/web</code>. Its environment holds <code>BACKEND_URL</code>, the private signing key <code>JWT_PRIVATE_KEY</code>, <code>AUTH_SECRET</code> and optional GitHub OAuth values. The matching public key is published in <code>render.yaml</code>.</li>
+        <li><strong>Memory:</strong> about 150–180 MB of the 512 MB limit, measured on Render.</li>
+      </ul>
+    </section>
+
+    <!-- 15 -->
+    <section class="ch" id="repo">
+      <header><p class="label">Chapter 15</p><h2>Repository map</h2></header>
+<pre class="code"><code>datapilot/
+├─ README.md, CLAUDE.md, docs/SPEC.md        <span class="c"># overview, notes for Claude Code, the full build spec</span>
+├─ render.yaml                               <span class="c"># Render Blueprint for the API</span>
+├─ backend/                                  <span class="c"># Python 3.12, uv</span>
+│  ├─ Dockerfile, alembic.ini, migrations/   <span class="c"># image + database migrations</span>
+│  ├─ profiles/default.json                  <span class="c"># profile.v1: all prompts and routing (v2)</span>
+│  ├─ data/dbs/                              <span class="c"># catalog.json, BIRD column descriptions, checksums</span>
+│  ├─ scripts/fetch_dbs.py, ask.py           <span class="c"># download DBs; ask one question from the terminal</span>
+│  └─ datapilot/
+│     ├─ agents/     <span class="c"># graph.py, planner, schema_linker, sql_agent, verifier, analyst, chart, narrator, state</span>
+│     ├─ sql/        <span class="c"># guard.py, executor.py, explain.py, compare.py</span>
+│     ├─ index/      <span class="c"># catalog, value_index, schema_index, cache (verified SQL)</span>
+│     ├─ guards/     <span class="c"># input.py, output_grounding.py, pii.py</span>
+│     ├─ llm/        <span class="c"># providers (Gemini/Groq REST), router, quota, prices, fake</span>
+│     ├─ uploads/    <span class="c"># ingest.py (parsing, types, PII), registry.py (storage, access)</span>
+│     ├─ api/        <span class="c"># main.py routes, auth.py, runs.py (run manager + SSE), ratelimit.py</span>
+│     ├─ runner.py, tracing.py, profile.py, persist.py, agentforge.py
+│     ├─ bench.py, eval_adapter.py, evalkit.py, sandbox_node.py
+│     └─ tests/      <span class="c"># 485 tests</span>
+├─ apps/web/                                 <span class="c"># Next.js 16 app (Vercel root)</span>
+│  ├─ app/           <span class="c"># pages: /, login, app, databases, benchmarks, runs, about; api/ proxy, health, upload-token</span>
+│  ├─ components/    <span class="c"># answer/, workspace/, data/ (upload), db/, bench/, trace/, shell/, brand/, ui/</span>
+│  ├─ lib/           <span class="c"># api client, SSE reader, turn reducer, types, chart-spec whitelist, use-conversation</span>
+│  ├─ sandbox/ + public/sandbox/pyodide-worker.js   <span class="c"># browser sandbox</span>
+│  ├─ auth.ts, proxy.ts, next.config.ts      <span class="c"># login, route guard, security headers (CSP)</span>
+│  └─ e2e/           <span class="c"># Playwright tests</span>
+├─ sandbox/                                  <span class="c"># shared Python lockdown + Node Pyodide runner + tests</span>
+├─ bench/                                    <span class="c"># subset_150, splits, regression_40, results/, summary.json</span>
+├─ evals/cases/smoke.jsonl                   <span class="c"># 10 case.v1 cases incl. red-team</span>
+└─ .github/workflows/                        <span class="c"># ci.yml, bench.yml</span></code></pre>
+      <h3>The files to read first</h3>
+      <ol>
+        <li><code>backend/datapilot/agents/graph.py</code>: the whole flow in about 170 lines.</li>
+        <li><code>backend/datapilot/sql/guard.py</code>: the safety rules.</li>
+        <li><code>backend/datapilot/agents/sql_agent.py</code> and <code>verifier.py</code>: candidates, repair, voting.</li>
+        <li><code>backend/datapilot/guards/output_grounding.py</code>: how numbers are checked.</li>
+        <li><code>backend/profiles/default.json</code>: every prompt.</li>
+        <li><code>apps/web/lib/turn.ts</code> and <code>use-conversation.ts</code>: how the UI follows a run.</li>
+      </ol>
+    </section>
+
+    <!-- 16 -->
+    <section class="ch" id="tools">
+      <header><p class="label">Chapter 16</p><h2>Every tool used</h2></header>
+      <div class="tools">
+        <div class="card"><p class="meta">AI and agents</p><h4>Models and orchestration</h4><ul>
+          <li><strong>LangGraph 1.2</strong>: agent graph, parallel <code>Send</code>, <code>interrupt()</code>, checkpointer</li>
+          <li><strong>Google Gemini</strong> 3 Flash, 3.1 Flash-Lite, embedding-001 (AI Studio REST)</li>
+          <li><strong>Groq</strong>: Qwen 3.8 27B, gpt-oss-120b, Llama Prompt Guard 2</li>
+          <li><strong>Pydantic</strong>: validating JSON from models</li>
+          <li><strong>Pyodide 314.0.7</strong> (Python 3.14, pandas 3.0, NumPy) in a Web Worker and in Node</li>
+        </ul></div>
+        <div class="card"><p class="meta">Backend</p><h4>Python services</h4><ul>
+          <li><strong>FastAPI</strong> + <strong>uvicorn</strong>: API and SSE streaming</li>
+          <li><strong>sqlglot</strong>: SQL parsing for the guard</li>
+          <li><strong>SQLite</strong> (stdlib <code>sqlite3</code>): read-only demo databases</li>
+          <li><strong>SQLAlchemy 2</strong> + <strong>Alembic</strong> + <strong>psycopg 3</strong>: Postgres access and migrations</li>
+          <li><strong>RapidFuzz</strong>: fuzzy value matching</li>
+          <li><strong>NetworkX</strong>: join paths over foreign keys</li>
+          <li><strong>httpx</strong>: async calls to Gemini and Groq</li>
+          <li><strong>PyJWT</strong> (ES256), <strong>pydantic-settings</strong>, <strong>openpyxl</strong>, <strong>python-multipart</strong></li>
+        </ul></div>
+        <div class="card"><p class="meta">Frontend</p><h4>Web app</h4><ul>
+          <li><strong>Next.js 16</strong> (App Router) + <strong>React 19</strong> + <strong>TypeScript</strong></li>
+          <li><strong>Auth.js v5</strong>: guest and GitHub login; <strong>jose</strong>: signing tokens</li>
+          <li><strong>Tailwind CSS 4</strong>: styling with design tokens</li>
+          <li><strong>TanStack Query</strong> and <strong>TanStack Virtual</strong>: data fetching, fast tables</li>
+          <li><strong>Vega-Lite</strong> + <strong>vega-embed</strong> (CSP-safe interpreter): answer charts</li>
+          <li><strong>Recharts</strong>: benchmark charts</li>
+          <li><strong>Shiki</strong>: SQL and Python highlighting</li>
+          <li><strong>zod</strong>, <strong>lucide-react</strong>, <strong>sonner</strong></li>
+        </ul></div>
+        <div class="card"><p class="meta">Data and infrastructure</p><h4>Hosting and storage</h4><ul>
+          <li><strong>Vercel</strong> (web), <strong>Render</strong> (Docker API), <strong>Neon</strong> (Postgres)</li>
+          <li><strong>Docker</strong> image, <strong>GitHub Releases</strong> for the database asset</li>
+          <li><strong>BIRD Mini-Dev</strong> benchmark data, <strong>Chinook</strong> sample database</li>
+        </ul></div>
+        <div class="card"><p class="meta">Quality</p><h4>Testing and CI</h4><ul>
+          <li><strong>pytest</strong> + pytest-asyncio, <strong>ruff</strong>, <strong>mypy</strong></li>
+          <li><strong>Vitest</strong> + Testing Library, <strong>ESLint</strong>, <strong>tsc</strong></li>
+          <li><strong>Playwright</strong> + <strong>axe-core</strong> (accessibility)</li>
+          <li><strong>node:test</strong> for the sandbox runner</li>
+          <li><strong>GitHub Actions</strong>, <strong>gitleaks</strong></li>
+        </ul></div>
+        <div class="card"><p class="meta">Developer tools</p><h4>How it was built</h4><ul>
+          <li><strong>Claude Code</strong>: the AI coding agent that built it from the spec</li>
+          <li><strong>uv</strong> (Python packages), <strong>pnpm</strong> and <strong>npm</strong> (JavaScript)</li>
+          <li><strong>GitHub CLI</strong> (<code>gh</code>), <strong>Vercel CLI</strong></li>
+          <li><strong>OpenSSL</strong> for the ES256 key pair</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <!-- 17 -->
+    <section class="ch" id="design">
+      <header><p class="label">Chapter 17</p><h2>The Vélora design</h2></header>
+      <p>The interface uses the "Vélora" palette you picked from a design reference: an editorial, museum-like look instead of a default dashboard theme.</p>
+      <div class="swatches">
+        <div class="sw" style="background:#1b1e4a;color:#f3f0e8">Midnight Navy<small>#1B1E4A</small></div>
+        <div class="sw" style="background:#afaea2;color:#1b1e4a">Warm Stone Grey<small>#AFAEA2</small></div>
+        <div class="sw" style="background:#d21319;color:#ffffff">Crimson Red<small>#D21319</small></div>
+      </div>
+      <ul>
+        <li><strong>Type:</strong> Cormorant Garamond for headings and answers, Manrope for interface text, JetBrains Mono for spaced-out labels.</li>
+        <li><strong>Motifs:</strong> the ✦ star logo, numbered swatch cards, hairline rules, an engraved astrolabe whose stars form a line chart.</li>
+        <li><strong>Themes:</strong> light uses warm stone paper with navy ink; dark uses midnight navy with ivory ink. Text meets WCAG AA contrast, and status colors always come with an icon and words.</li>
+      </ul>
+    </section>
+
+    <!-- 18 -->
+    <section class="ch" id="job">
+      <header><p class="label">Chapter 18</p><h2>How this gets you hired</h2></header>
+      <p>Recruiters spend about 30 seconds on a project. Hiring managers and engineers then go deep. DataPilot works at both depths: a live link and a clear pitch for the first, and real engineering decisions with evidence for the second.</p>
+      <h3>What each role will see in it</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Role</th><th>What they look for</th><th>Where DataPilot shows it</th></tr></thead>
+        <tbody>
+          <tr><td>AI Engineer</td><td>LLM apps beyond a single prompt; evaluation; reliability</td><td>LangGraph team, voting, repair, verifier, grounding, BIRD ablation harness</td></tr>
+          <tr><td>Forward Deployed Engineer</td><td>Shipping end to end for a customer; handling real data; debugging in production</td><td>Deployed product, uploads with privacy, production bugs found and fixed, latency-aware routing</td></tr>
+          <tr><td>ML / Applied Scientist</td><td>Measurement rigor</td><td>Fixed stratified subset, held-out test split, bootstrap confidence intervals, oracle self-test</td></tr>
+          <tr><td>Data / Analytics Engineer</td><td>SQL depth, data modeling</td><td>SQL parsing and guarding, cost estimation, schema linking, ingestion with type inference</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Resume bullets you can use</h3>
+      <p class="small">Every number below is real and from this project.</p>
+      <ul class="bullets">
+        <li><span>Built <strong>DataPilot</strong>, a multi-agent text-to-SQL analyst (LangGraph, FastAPI, Next.js) with a planner, schema linker, three parallel SQL strategies with result-hash voting, self-repair, an LLM verifier and human-in-the-loop checkpoints; deployed at $0 on Vercel, Render and Neon using free Gemini and Groq tiers.</span><button class="copy" type="button">Copy</button></li>
+        <li><span>Enforced read-only SQL in three independent layers (sqlglot parser guard, SQLite authorizer with read-only connections, read-only files), verified by 60 malicious-statement tests, and added a precision-aware output guard that rejects any number not derivable from query results.</span><button class="copy" type="button">Copy</button></li>
+        <li><span>Ran model-written Python in a browser-side Pyodide (WebAssembly) sandbox with network APIs removed and a 10-second kill switch, so the server never executes generated code.</span><button class="copy" type="button">Copy</button></li>
+        <li><span>Benchmarked on BIRD Mini-Dev with a fixed, stratified 150-question subset and held-out test split; built a resumable ablation harness (C0–C4) with response caching, bootstrap confidence intervals and list-price cost tracking. Single-call baseline: 48.0% execution accuracy (95% CI 34–62%).</span><button class="copy" type="button">Copy</button></li>
+        <li><span>Diagnosed free-tier latency in production (Gemini 3 Flash at 11–25 s per call) and added versioned profile routing, 9-second timeouts, per-model cooldowns and fallback chains, bringing typical answers from over a minute to about 5–30 seconds.</span><button class="copy" type="button">Copy</button></li>
+        <li><span>Added bring-your-own-data: CSV, Excel, JSON and SQLite ingestion with type inference, PII detection and consent, private per-user datasets stored durably on free infrastructure, and upload-scoped tokens to bypass serverless body limits.</span><button class="copy" type="button">Copy</button></li>
+        <li><span>Wrote 485 backend tests, Playwright end-to-end tests with axe accessibility checks, and a CI pipeline with Docker builds and full-history secret scanning; production checks caught and fixed a grounding miss, an upload race and a proxy-wide rate-limit bug.</span><button class="copy" type="button">Copy</button></li>
+      </ul>
+
+      <h3>Your 3-minute live demo</h3>
+      <ol>
+        <li>Open the landing page: one sentence on the problem ("LLMs write SQL that runs but can be wrong, and invent numbers").</li>
+        <li>Ask the genres question on Chinook. Point at the plan, the two candidates agreeing, the High badge, and "Numbers checked ✓". Open the SQL tab and the Trace tab.</li>
+        <li>Ask the correlation question. Point at "Ran in your browser · no network" and the Python tab.</li>
+        <li>On European Football, ask "Show me the best players". Show the clarifying options, then the "Run this query?" checkpoint.</li>
+        <li>Upload a small CSV and ask one question to show it works on any data.</li>
+        <li>End on the Benchmarks page: "I measured it, and here's the baseline with its confidence interval".</li>
+      </ol>
+      <div class="callout key"><span class="label">Before a demo</span><p>Open the site 2 minutes early so the free Render server is awake (the first request after 15 idle minutes takes about 50 seconds).</p></div>
+
+      <h3>Talk about limitations honestly</h3>
+      <ul>
+        <li>Free models are far from state of the art on BIRD; the goal is a measured improvement over a baseline, not a leaderboard rank.</li>
+        <li>Only the C0 baseline is measured so far; C1–C4 need more nights of free quota.</li>
+        <li>Paused runs live in memory on a single instance; scaling out would need a Postgres checkpointer and a shared event log.</li>
+        <li>Answers take 5–30 seconds on free tiers. Paid models or caching would cut that.</li>
+      </ul>
+      <h3>What you would do next (great closing answer)</h3>
+      <ul>
+        <li>Finish the ablation and plot accuracy versus cost.</li>
+        <li>Fine-tune a small SQL model on the verified-SQL cache.</li>
+        <li>Connect to real warehouses (Snowflake, BigQuery) with dry-run cost limits and row-level security.</li>
+        <li>Plug into AgentForge for automatic red-teaming and prompt optimization within the locked guards.</li>
+      </ul>
+    </section>
+
+    <!-- 19 -->
+    <section class="ch" id="interview">
+      <header><p class="label">Chapter 19</p><h2>Interview questions</h2></header>
+      <p>Practice answering out loud, then open each one to compare.</p>
+      <details class="qa"><summary>Why not just use one LLM call?</summary><div class="a"><p>One call has no way to know it's wrong. Splitting the work gives checkpoints: linking reduces wrong-table errors, multiple candidates let independent queries vote on the result, repair uses the real database error, and the verifier checks intent. The ablation measures what each piece adds and costs.</p></div></details>
+      <details class="qa"><summary>Why vote on results instead of SQL text?</summary><div class="a"><p>Two different SQL queries can be equally correct. What matters is whether they return the same rows. Hashing sorted, rounded rows makes the comparison order-insensitive unless the query is a ranking (ORDER BY with LIMIT).</p></div></details>
+      <details class="qa"><summary>How do you stop the system from deleting data?</summary><div class="a"><p>Three independent layers: a sqlglot parser guard that allows only one bounded SELECT, a SQLite connection that is read-only with an authorizer allowing only reads, and read-only database files. Tests call the executor directly with DELETE and DROP and confirm the file hash didn't change.</p></div></details>
+      <details class="qa"><summary>How do you prevent hallucinated numbers?</summary><div class="a"><p>The output guard extracts every number and requires it to match a result value or a code-computed derivation at the written precision. Unsupported numbers trigger one rewrite, then removal with a visible notice. Only checked text is streamed. In production it caught $13,469.80 written for $13,469.75 after I tightened the matching rule.</p></div></details>
+      <details class="qa"><summary>Why run Python in the browser?</summary><div class="a"><p>Running model-written code on the server is a security risk. Pyodide runs Python as WebAssembly inside a Web Worker on the user's machine, where I remove network APIs before user code runs and kill the worker after 10 seconds. It costs nothing and keeps the server safe.</p></div></details>
+      <details class="qa"><summary>How does human-in-the-loop work technically?</summary><div class="a"><p>LangGraph's <code>interrupt()</code> pauses the graph and checkpoints its state. The API emits a <code>clarify_request</code> or <code>confirm_request</code> event and waits on a future. When the user clicks, a POST resolves it and the graph resumes with <code>Command(resume=value)</code>.</p></div></details>
+      <details class="qa"><summary>How did you evaluate it?</summary><div class="a"><p>On BIRD Mini-Dev with a fixed stratified 150-question subset and a held-out 50-question test split, scored by execution accuracy with BIRD's official set comparison, reported with 95% bootstrap confidence intervals and list-price cost. An oracle self-test scoring 150/150 verifies the scoring path.</p></div></details>
+      <details class="qa"><summary>What was the hardest production problem?</summary><div class="a"><p>Free-tier latency. Gemini 3 Flash took 11–25 seconds per call. I measured it from the traces, moved reasoning steps to Flash-Lite in a new profile version, and added 9-second timeouts and per-model cooldowns so a slow model is skipped for 45 seconds. Answers went from over a minute to about 5–30 seconds.</p></div></details>
+      <details class="qa"><summary>How do you handle provider outages and rate limits?</summary><div class="a"><p>Each step has a fallback chain. The router honors retry-after on per-minute limits, marks a model exhausted on daily caps, cools down slow or overloaded models, opens a circuit breaker after 5 failures, and keeps a daily quota ledger in Postgres. When everything is exhausted the app degrades to browse-only with a clear message.</p></div></details>
+      <details class="qa"><summary>How do you deal with personal data?</summary><div class="a"><p>Columns that look personal are tagged; they're masked in UI samples and excluded from prompts and value links. Traces are redacted before export. Uploads require consent because free-tier providers may train on prompts.</p></div></details>
+      <details class="qa"><summary>How does the web app talk to the API securely?</summary><div class="a"><p>The browser never holds a secret. The Next.js server reads the session and mints a 5-minute ES256 JWT for each request. The API has only the public key, so a leaked API config can't mint tokens. Uploads use a separate token scoped to one route.</p></div></details>
+      <details class="qa"><summary>What is schema linking and why does it matter?</summary><div class="a"><p>Finding which tables, columns and exact values the question refers to. Most text-to-SQL errors are wrong columns or misspelled values. I use BM25 and embeddings over column descriptions, fuzzy matching against real distinct values, and shortest join paths in the foreign-key graph.</p></div></details>
+      <details class="qa"><summary>Why LangGraph and not a simple loop?</summary><div class="a"><p>I needed parallel branches, cycles for repair, pauses for humans and the browser, and resumable state. LangGraph gives those as primitives (<code>Send</code>, conditional edges, <code>interrupt()</code>, checkpointers) and the graph structure is easy to reason about and test.</p></div></details>
+      <details class="qa"><summary>How would you scale it to many users or real customers?</summary><div class="a"><p>Stateless API replicas with a Postgres checkpointer and a shared event log, a queue for long analyses, a result cache, per-tenant credentials in a vault for real warehouses, read replicas, and warehouse dry-run cost limits instead of SQLite EXPLAIN.</p></div></details>
+      <details class="qa"><summary>What would you measure next?</summary><div class="a"><p>The full C0–C4 ablation and its accuracy-versus-cost curve, then failure categories (wrong join, wrong filter, wrong grain) to decide which agent to improve. A paired McNemar test against main is how AgentForge would gate pull requests.</p></div></details>
+      <details class="qa"><summary>How did you test something nondeterministic?</summary><div class="a"><p>A scripted fake LLM returns fixed replies per step, so every graph path is deterministic in tests. Real model quality is measured separately by the benchmark, not by unit tests.</p></div></details>
+    </section>
+
+    <!-- 20 -->
+    <section class="ch" id="study">
+      <header><p class="label">Chapter 20</p><h2>7-day mastery plan</h2></header>
+      <p>Tick items as you go; your progress is saved in this browser only.</p>
+      <ul class="checklist" id="plan">
+        <li><label><input type="checkbox" id="d1"><span><span class="day">Day 1 · Use it</span>Do the 3-minute demo yourself on the live site. Open every tab of the answer card and the full trace page. Read chapters 01–04 of this guide.</span></label></li>
+        <li><label><input type="checkbox" id="d2"><span><span class="day">Day 2 · The flow</span>Read <code>agents/graph.py</code> and <code>runner.py</code>. Redraw the graph from memory on paper. Run <code>uv run python scripts/ask.py chinook "Which 10 artists have the most tracks?"</code> with <code>FAKE_LLM=true</code> and read each printed event.</span></label></li>
+        <li><label><input type="checkbox" id="d3"><span><span class="day">Day 3 · Safety</span>Read <code>sql/guard.py</code> and <code>sql/executor.py</code>. Try to write a query that gets past the guard, then find the test that already covers it in <code>tests/test_guard.py</code>.</span></label></li>
+        <li><label><input type="checkbox" id="d4"><span><span class="day">Day 4 · Trust</span>Read <code>verifier.py</code> and <code>guards/output_grounding.py</code>. Explain out loud why the $13,469.80 case fails and why "about 13,000" passes.</span></label></li>
+        <li><label><input type="checkbox" id="d5"><span><span class="day">Day 5 · Models</span>Read <code>llm/router.py</code> and <code>profiles/default.json</code>. Explain the fallback chain and cooldowns. Read chapter 10.</span></label></li>
+        <li><label><input type="checkbox" id="d6"><span><span class="day">Day 6 · Web and data</span>Read <code>lib/use-conversation.ts</code>, <code>lib/turn.ts</code> and <code>uploads/ingest.py</code>. Upload your own CSV on the live site and check one answer by hand.</span></label></li>
+        <li><label><input type="checkbox" id="d7"><span><span class="day">Day 7 · Interview</span>Answer every question in chapter 19 out loud without looking. Do the demo once for a friend and time it under 3 minutes.</span></label></li>
+      </ul>
+      <p class="progress" id="progress" aria-live="polite"></p>
+    </section>
+
+    <!-- 21 -->
+    <section class="ch" id="glossary">
+      <header><p class="label">Chapter 21</p><h2>Glossary</h2></header>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Term</th><th>Meaning in this project</th></tr></thead>
+        <tbody>
+          <tr><td>Ablation</td><td>Turning features on one at a time (C0→C4) to measure each one's effect.</td></tr>
+          <tr><td>Adaptive k</td><td>Run 2 SQL candidates; run the 3rd only if the first two disagree.</td></tr>
+          <tr><td>BIRD Mini-Dev</td><td>Public benchmark of 500 text-to-SQL questions over 11 SQLite databases.</td></tr>
+          <tr><td>BM25</td><td>Classic keyword relevance scoring, used to rank columns.</td></tr>
+          <tr><td>Bootstrap CI</td><td>Confidence interval from resampling the questions 1,000 times.</td></tr>
+          <tr><td>Circuit breaker</td><td>Temporarily stop calling a provider after repeated failures.</td></tr>
+          <tr><td>CSP</td><td>Content Security Policy: browser rules about which scripts and connections a page may use.</td></tr>
+          <tr><td>Embedding</td><td>A list of numbers representing meaning, used for semantic search.</td></tr>
+          <tr><td>EX (execution accuracy)</td><td>Share of questions whose predicted SQL returns the same row set as the gold SQL.</td></tr>
+          <tr><td>EXPLAIN QUERY PLAN</td><td>SQLite command describing how a query will run; used to estimate scanned rows.</td></tr>
+          <tr><td>Few-shot</td><td>Including solved examples in the prompt.</td></tr>
+          <tr><td>Grounding</td><td>Making sure statements are supported by data; here, every number in the answer.</td></tr>
+          <tr><td>Gold SQL</td><td>The benchmark's correct query for a question.</td></tr>
+          <tr><td>Interrupt</td><td>LangGraph primitive that pauses a run for outside input and resumes later.</td></tr>
+          <tr><td>JWT (ES256)</td><td>A signed token; ES256 uses a private key to sign and a public key to verify.</td></tr>
+          <tr><td>LangGraph</td><td>Framework for agent workflows as graphs with state, branches and pauses.</td></tr>
+          <tr><td>PII</td><td>Personally identifiable information: emails, phones, names, addresses.</td></tr>
+          <tr><td>Profile (profile.v1)</td><td>Versioned prompts and routing that can be tuned; safety settings are locked out.</td></tr>
+          <tr><td>Prompt injection</td><td>Text that tries to override the model's instructions.</td></tr>
+          <tr><td>Pyodide</td><td>CPython compiled to WebAssembly, so Python runs in a browser.</td></tr>
+          <tr><td>Result hash</td><td>A fingerprint of a query's result rows, used for voting.</td></tr>
+          <tr><td>Schema linking</td><td>Finding the tables, columns and values a question refers to.</td></tr>
+          <tr><td>Self-consistency</td><td>Generate several answers and trust the one most agree on.</td></tr>
+          <tr><td>Send</td><td>LangGraph primitive that launches parallel branches.</td></tr>
+          <tr><td>SSE</td><td>Server-Sent Events: a one-way live stream from server to browser.</td></tr>
+          <tr><td>sqlglot</td><td>Python library that parses and rewrites SQL.</td></tr>
+          <tr><td>Token</td><td>The unit LLMs read and write, roughly three quarters of a word; also the unit of pricing.</td></tr>
+          <tr><td>trace.v1</td><td>The shared record format for every run: spans, models, tokens, timings, status.</td></tr>
+          <tr><td>Vega-Lite</td><td>A JSON grammar for charts; the chart agent writes a restricted subset.</td></tr>
+          <tr><td>Web Worker</td><td>A background thread in the browser with no access to the page itself.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <footer class="end">DataPilot Field Guide · source file <code>docs/DataPilot-Field-Guide.html</code> in the repository · numbers as measured on October 8–9, 2026.</footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  // Highlight the chapter currently in view.
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          links.forEach(function (a) { a.classList.remove("on"); });
+          var a = byId[e.target.id];
+          if (a) a.classList.add("on");
+        }
+      });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    document.querySelectorAll("section.ch").forEach(function (s) { io.observe(s); });
+  }
+
+  // Copy buttons for resume bullets.
+  document.querySelectorAll("button.copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var text = btn.previousElementSibling.textContent.trim();
+      var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy"; }, 1500); };
+      var fallback = function () {
+        var r = document.createRange(); r.selectNodeContents(btn.previousElementSibling);
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        btn.textContent = "Selected";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+      };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+        else fallback();
+      } catch (e) { fallback(); }
+    });
+  });
+
+  // Study plan progress, remembered in this browser only.
+  var KEY = "dp-guide-plan";
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#plan input"));
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+  var progress = document.getElementById("progress");
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    progress.textContent = n + " of " + boxes.length + " days done";
+  }
+  boxes.forEach(function (b) {
+    b.checked = !!state[b.id];
+    b.addEventListener("change", function () {
+      state[b.id] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      render();
+    });
+  });
+  render();
+})();
+</script>
